@@ -1,15 +1,16 @@
 #include <iostream>
-#include <string>
-#include <bubble_sort.cpp>
+
+#include "bubble_sort.hpp"
 
 using namespace std;
 
 int main() {
-    vector<int> v = {5, 1, 4, 2, 8};
+    int arr[] = {5, 1, 4, 2, 8};
+	const int m = sizeof(arr) / sizeof(arr[0]);
 
-    bubbleSort(v);
+    biv::bubble_sort(arr, m);
 
-    for (auto i : v)
+    for (auto i : arr)
         cout << i << " ";
     return 0;
 }
