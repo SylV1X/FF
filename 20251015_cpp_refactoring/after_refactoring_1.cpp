@@ -3,7 +3,7 @@
 
 void output_sequences(const char* const comm_1, const char* const comm_2, const int size, int index) {
 	
-	float sequence[10];
+	int sequence[size];
 	float average = 0;
 	
 	std::cout << comm_1 << ' ' << index << ':' << std::endl;
@@ -24,12 +24,13 @@ void output_sequences(const char* const comm_1, const char* const comm_2, const 
 
 int main()
 {
-	int n;
-	std::cin >> n;
+	std::cout << "Введите количество последовательностей: ";
+	int number;
+	std::cin >> number;
 	const int seq_size = 10;
 	
-	for (int i = 1; i < n + 1; i++) {
-		output_sequences("Sequense", "Average from sequence", seq_size, i);
+	for (int i = 1; i < number + 1; i++) {
+		output_sequences("Последовательность", "Среднее последовательности №", seq_size, i);
 	}
 	
 	return 0;
