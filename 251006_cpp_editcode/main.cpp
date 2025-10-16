@@ -6,7 +6,7 @@ int main() {
 	const int max_value = 5;
 	
 	int *sortable_arr = new int[sortable_arr_size]{};
-	int *amount_arr(new int[max_value]{});
+	int *amount_arr = new int[max_value]{};
 	
 	iod::create_data(sortable_arr, sortable_arr_size, max_value);
 	iod::print("Массив до сортировки: ", sortable_arr, sortable_arr_size);
