@@ -23,27 +23,27 @@ int main()
 	};
 	const int study_size = sizeof(study_children) / sizeof(study_children[0]);
 	
-	ssY::MenuItem study = { "1 - Math!", ssY::study };
+	ssY::MenuItem study = { "1 - Math!", ssY::show_menu, study_children, study_size };
 	ssY::MenuItem exit = { "0 - Sleep(", ssY::exit };
 	
 	ssY::MenuItem* main_children[] = { &exit, &study};
 	const int main_size = sizeof(main_children) / sizeof(main_children[0]);
 	
-	int user_input;
+	ssY::MenuItem main = { nullptr, ssY::show_menu, main_children, main_size };
+	
+	sum.parent = &study;
+	substract.parent = &study;
+	multiply.parent = &study;
+	divide.parent = &study;
+	go_back.parent = &study;
+	
+	study.parent = &main;
+	exit.parent = &main;
+	
+	const ssY::MenuItem* current = &main;
 	do
 	{
-		std::cout << "Hello!" << std::endl;
-		for (int i = 1; i < main_size; i++)
-		{	
-			std::cout << main_children[i]->title << std::endl;
-		}
-		std::cout << main_children[0]->title << std::endl;
-		std::cout << "Study_app >> " << std::endl;
-		
-		std::cin >> user_input;
-		main_children[user_input]->func();
-		
-		std::cout << std::endl;
+		current = current->func(current);
 	}
 	while (true);
 	

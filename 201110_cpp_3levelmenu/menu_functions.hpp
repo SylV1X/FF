@@ -1,13 +1,16 @@
 #pragma once
 
+#include "menu.hpp"
+
 namespace ssY
 {
-	void exit();
-	void study();
+	const MenuItem* show_menu(const MenuItem* current);
 	
-	void sum();
-	void substract();
-	void multiply();
-	void divide();
-	void go_back();
+	const MenuItem* exit(const MenuItem* current);
+	
+	const MenuItem* sum(const MenuItem* current);
+	const MenuItem* substract(const MenuItem* current);
+	const MenuItem* multiply(const MenuItem* current);
+	const MenuItem* divide(const MenuItem* current);
+	const MenuItem* go_back(const MenuItem* current);
 }
