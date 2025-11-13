@@ -1,4 +1,3 @@
-#include <clocale>
 #include <iostream>
 
 #include "menu.hpp"
@@ -6,9 +5,7 @@
 #include "menu_items.hpp"
 
 int main()
-{
-	std::setlocale(LC_ALL, "");
-	
+{	
 	const ssY::MenuItem* current = &ssY::MAIN;
 	do
 	{

@@ -5,13 +5,13 @@
 
 const ssY::MenuItem* ssY::show_menu(const MenuItem* current)
 {
-	std::cout << "Hello!" << std::endl;
+	std::cout << "Обучайка привествует тебя!" << std::endl;
 	for (int i = 1; i < current->children_count; i++)
 	{	
 		std::cout << current->children[i]->title << std::endl;
 	}
 	std::cout << current->children[0]->title << std::endl;
-	std::cout << "Study_app >> ";
+	std::cout << "Обучайка >> ";
 	
 	int user_input;
 	std::cin >> user_input;
@@ -24,6 +24,7 @@ const ssY::MenuItem* ssY::exit(const MenuItem* current)
 {
 	std::exit(0);
 }
+
 
 const ssY::MenuItem* ssY::sum(const MenuItem* current)
 {
@@ -45,6 +46,17 @@ const ssY::MenuItem* ssY::divide(const MenuItem* current)
 	std::cout << current->title << std::endl << std::endl;
 	return current->parent;
 }
+const ssY::MenuItem* ssY::diff_eq(const MenuItem* current)
+{
+	std::cout << current->title << std::endl << std::endl;
+	return current->parent;
+}
+const ssY::MenuItem* ssY::integral(const MenuItem* current)
+{
+	std::cout << current->title << std::endl << std::endl;
+	return current->parent;
+}
+
 const ssY::MenuItem* ssY::go_back(const MenuItem* current)
 {
 	std::cout << current->title << std::endl << std::endl;
