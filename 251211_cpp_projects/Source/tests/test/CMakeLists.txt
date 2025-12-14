@@ -4,7 +4,7 @@ set(SOURCES
 
 add_executable(test_bubble ${SOURCES})
 target_link_libraries(test_bubble 
-	bubble_sort_lib
+	${LIBRARY}
 	gtest_main 
 	gmock_main 
 )

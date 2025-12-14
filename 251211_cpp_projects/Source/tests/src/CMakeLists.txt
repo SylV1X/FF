@@ -1,10 +1,10 @@
-target_sources(bubble_sort_lib 
+target_sources(${LIBRARY}
 	PRIVATE
 		bubble_sort.cpp
 	PUBLIC
 		bubble_sort.hpp
 )
 
-target_include_directories(bubble_sort_lib PUBLIC
+target_include_directories(${LIBRARY} PUBLIC
 	"${PROJECT_SOURCE_DIR}/src"
 )
