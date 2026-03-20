@@ -85,6 +85,19 @@ bool Vector<T>::remove_first(const T& value) {
 			for (std::size_t j = i; j < size - 1; j++)
 				arr[j] = arr[j + 1];
 			size -= 1;
+			
+			if (size < (capacity / 4) and (capacity / 2) > START_CAPACITY)
+			{
+				std::size_t nar_cap = capacity / 2;
+				T* nar_copy = new T[nar_cap];
+				
+				for (std::size_t i = 0; i < size; i++)
+					nar_copy[i] = arr[i];
+				delete[] arr;
+				
+				arr = nar_copy;
+				capacity = nar_cap;
+			}
 
 			return true;
 		}
