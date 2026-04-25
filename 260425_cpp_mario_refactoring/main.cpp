@@ -1,196 +1,132 @@
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <math.h>
 #include <windows.h>
 
-#define mapWidth 80
-#define mapHeight 40
+const int MAP_WIDTH = 80;
+const int MAP_HEIGHT = 40;
 
-typedef struct SObject
+struct GameObject
 {
 	float x, y;
 	float width, height;
-	float vertSpeed;
+	float vertical_speed, horizontal_speed;
+	char kind;
 	bool isFly;
-	char cType;
-	float horizonSpeed;
-} TObject;
+};
 
-char map[mapHeight][mapWidth + 1];
-TObject mario;
+char map[MAP_HEIGHT][MAP_WIDTH + 1];
+GameObject player;
 
+GameObject* background_elem = nullptr;
+int background_elems_count;
 
-TObject *brick = NULL;
-int brickLength;
+GameObject* sprite = nullptr;
+int sprites_count;
 
-TObject *moving = NULL;
-int movingLength;
-int level = 1;
+int current_level = 1;
 int score;
-int maxlvl;
+int max_level;
 
-void ClearMap()
+void clear_map();
+void show_map();
+void scroll_map(float dx);
+void set_cursor(int x, int y);
+void add_object_on_map(GameObject obj);
+bool object_within_map(int x, int y);
+void show_score();
+
+void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y);
+void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind);
+GameObject *add_new_background_elem();
+GameObject *add_new_sprite();
+void remove_sprite(int i);
+
+void vertical_move_object(GameObject* obj);
+void horizontal_move_object(GameObject *obj);
+bool check_collision(GameObject o1, GameObject o2);
+
+void create_level(int level);
+void player_collision_model();
+void kill_player();
+
+int main()
 {
-	for (int i = 0; i < mapWidth; i++)
-		map[0][i] = ' ';
-	map[0][mapWidth] = '\0';
-	for (int j = 0; j < mapHeight; j++)
-		sprintf(map[j], map[0]);
-}
+	create_level(current_level);
 
-void showMap()
-{
-	map[mapHeight - 1][mapWidth - 1] = '\0';
-	for (int j = 0; j < mapHeight; j++)
-		printf("%s\n", map[j]);
-}
+	do
+	{
+		clear_map();
 
-void SetObjectPos(TObject* obj, float xPos, float yPos)
-{
-	(*obj).x = xPos;
-	(*obj).y = yPos;
-}
+		if ((player.isFly == FALSE) && (GetKeyState(VK_SPACE) < 0)) player.vertical_speed = -1;
+		if (GetKeyState('A') < 0) scroll_map(1);
+		if (GetKeyState('D') < 0) scroll_map(-1);
 
-void InitObject(TObject* obj, float xPos, float yPos, float oWidth, float oHeight, char inType)
-{
-	SetObjectPos(obj, xPos, yPos);
-	(*obj).width = oWidth;
-	(*obj).height = oHeight;
-	(*obj).vertSpeed = 0;
-	(*obj).cType = inType;
-	(*obj).horizonSpeed = 0.2;
-	
-}
+		if (player.y > MAP_HEIGHT) kill_player();
 
-bool IsCollision(TObject o1, TObject o2);
-
-void CreateLevel(int lvl);
-
-TObject *GetNewMoving();
-
-void PlayerDead()
-{
-	system("color 4F");
-	Sleep(500);
-	CreateLevel(level);
-}
-
-void VertMoveObject(TObject* obj)
-{
-	(*obj).vertSpeed += 0.05;
-	(*obj).isFly = TRUE;
-	SetObjectPos(obj, (*obj).x, (*obj).y + (*obj).vertSpeed);
-	for (int i = 0; i < brickLength; i++)
-		if (IsCollision(*obj, brick[i]))
+		vertical_move_object(&player);
+		player_collision_model();
+		for (int i = 0; i < background_elems_count; i++)
+			add_object_on_map(background_elem[i]);		
+		for (int i = 0; i < sprites_count; i++)
 		{
-			if (obj[0].vertSpeed > 0)
-				obj[0].isFly = FALSE;
-			
-			if ((brick[i].cType == '?') && (obj[0].vertSpeed < 0) && (obj == &mario))
+			vertical_move_object(sprite + i);
+			horizontal_move_object(sprite + i);
+			if (sprite[i].y > MAP_HEIGHT)
 			{
-				brick[i].cType = '-';
-				InitObject(GetNewMoving(), brick[i].x, brick[i].y - 3, 3, 2, '$');
-				moving[movingLength - 1].vertSpeed = -0.7;
-			}
-			
-			(*obj).y -= (*obj).vertSpeed;
-			(*obj).vertSpeed = 0;
-			
-			if (brick[i].cType == '+')
-			{
-				level++;
-				if (level > maxlvl) level = 1;
-				
-				system("color 2F");
-				Sleep(500);
-				CreateLevel(level);
-			}
-			break;
-		}
-}
-
-void DeleteMoving(int i)
-{
-	movingLength--;
-	moving[i] = moving[movingLength];
-	moving = (TObject*)realloc(moving, sizeof(*moving) * movingLength);
-}
-
-void MarioCollision()
-{
-	for (int i = 0; i < movingLength; i++)
-		if (IsCollision(mario, moving[i]))
-		{
-			if (moving[i].cType == 'o')
-			{
-				if (	(mario.isFly == TRUE)
-					&& (mario.vertSpeed > 0)
-					&& (mario.y + mario.height < moving[i].y + moving[i].height) * 0.5
-					)
-				{
-					score += 50;
-					DeleteMoving(i);
-					i--;
-					continue;
-				}
-				else
-					PlayerDead();
-			}
-			
-			if (moving[i].cType == '$')
-			{
-				score += 100;
-				DeleteMoving(i);
+				remove_sprite(i);
 				i--;
 				continue;
 			}
+			add_object_on_map(sprite[i]);
 		}
+		add_object_on_map(player);
+		show_score();
+
+		set_cursor(0, 0);
+		show_map();
+
+		Sleep(10);
+	} 
+	while (GetKeyState(VK_ESCAPE) >= 0);
+
+	return 0;
 }
 
-void HorizonMoveObject(TObject *obj)
+void clear_map()
 {
-	obj[0].x += obj[0].horizonSpeed;
-	
-	for (int i = 0; i < brickLength; i++)
-		if (IsCollision(obj[0], brick[i]))
+	for (int i = 0; i < MAP_WIDTH; i++)
+		map[0][i] = ' ';
+	map[0][MAP_WIDTH] = '\0';
+	for (int j = 0; j < MAP_HEIGHT; j++)
+		sprintf(map[j], map[0]);
+}
+
+void show_map()
+{
+	map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = '\0';
+	for (int j = 0; j < MAP_HEIGHT; j++)
+		printf("%s\n", map[j]);
+}
+
+void scroll_map(float dx)
+{
+	player.x -= dx;
+	for (int i = 0; i < background_elems_count; i++)
+		if (check_collision(player, background_elem[i]))
 		{
-			obj[0].x -= obj[0].horizonSpeed;
-			obj[0].horizonSpeed = -obj[0].horizonSpeed;
+			player.x += dx;
 			return;
 		}
+	player.x += dx;
 	
-	if (obj[0].cType == 'o')
-	{
-		TObject tmp = *obj;
-		VertMoveObject(&tmp);
-		if (tmp.isFly == TRUE)
-		{
-			obj[0].x -= obj[0].horizonSpeed;
-			obj[0].horizonSpeed = -obj[0].horizonSpeed;	
-		}
-	}
+	for (int i = 0; i < background_elems_count; i++)
+		background_elem[i].x += dx;	
+	for (int i = 0; i < sprites_count; i++)
+		sprite[i].x += dx;
 }
 
-bool IsPosInMap(int x, int y)
-{
-	return ((x >= 0) && (x < mapWidth) && (y >= 0) && (y < mapHeight));
-}
-
-void PutObjectOnMap(TObject obj)
-{
-	int ix = (int)round(obj.x);
-	int iy = (int)round(obj.y);
-	int iWidth = (int)round(obj.width);
-	int iHeight = (int)round(obj.height);
-
-	for (int i = ix; i < (ix + iWidth); i++)
-		for (int j = iy; j < (iy + iHeight); j++)
-			if (IsPosInMap(i, j))
-				map[j][i] = obj.cType;
-}
-
-void setCur(int x, int y)
+void set_cursor(int x, int y)
 {
 	COORD coord;
 	coord.X = x;
@@ -198,158 +134,235 @@ void setCur(int x, int y)
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
-void HorisonMoveMap(float dx)
+void add_object_on_map(GameObject obj)
 {
-	mario.x -= dx;
-	for (int i = 0; i < brickLength; i++)
-		if (IsCollision(mario, brick[i]))
-		{
-			mario.x += dx;
-			return;
-		}
-	mario.x += dx;
-	
-	for (int i = 0; i < brickLength; i++)
-		brick[i].x += dx;	
-	for (int i = 0; i < movingLength; i++)
-		moving[i].x += dx;
+	int int_x = (int)round(obj.x);
+	int int_y = (int)round(obj.y);
+	int int_width = (int)round(obj.width);
+	int int_height = (int)round(obj.height);
+
+	for (int i = int_x; i < (int_x + int_width); i++)
+		for (int j = int_y; j < (int_y + int_height); j++)
+			if (object_within_map(i, j))
+				map[j][i] = obj.kind;
 }
 
-bool IsCollision(TObject o1, TObject o2)
+bool object_within_map(int x, int y)
+{
+	return ((x >= 0) && (x < MAP_WIDTH) && (y >= 0) && (y < MAP_HEIGHT));
+}
+
+void show_score()
+{
+	char score_text[30];
+	sprintf(score_text, "Score: %d", score);
+	int length = strlen(score_text);
+	for (int i = 0; i < length; i++)
+	{
+		map[1][i + 5] = score_text[i];
+	}
+}
+
+void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y)
+{
+	(*obj).x = obj_pos_x;
+	(*obj).y = obj_pos_y;
+}
+
+void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind)
+{
+	set_object_pos(obj, init_x, init_y);
+	(*obj).width = init_width;
+	(*obj).height = init_height;
+	(*obj).vertical_speed = 0;
+	(*obj).kind = init_kind;
+	(*obj).horizontal_speed = 0.2;
+	
+}
+
+GameObject *add_new_background_elem()
+{
+	background_elems_count++;
+	background_elem = (GameObject*)realloc(background_elem, sizeof(*background_elem) * background_elems_count);
+	return background_elem + background_elems_count - 1;
+}
+
+GameObject *add_new_sprite()
+{
+	sprites_count++;
+	sprite = (GameObject*)realloc(sprite, sizeof(*sprite) * sprites_count);
+	return sprite + sprites_count - 1;
+}
+
+void remove_sprite(int i)
+{
+	sprites_count--;
+	sprite[i] = sprite[sprites_count];
+	sprite = (GameObject*)realloc(sprite, sizeof(*sprite) * sprites_count);
+}
+
+void vertical_move_object(GameObject* obj)
+{
+	(*obj).vertical_speed += 0.05;
+	(*obj).isFly = TRUE;
+	set_object_pos(obj, (*obj).x, (*obj).y + (*obj).vertical_speed);
+	for (int i = 0; i < background_elems_count; i++)
+		if (check_collision(*obj, background_elem[i]))
+		{
+			if (obj[0].vertical_speed > 0)
+				obj[0].isFly = FALSE;
+			
+			if ((background_elem[i].kind == '?') && (obj[0].vertical_speed < 0) && (obj == &player))
+			{
+				background_elem[i].kind = '-';
+				init_object(add_new_sprite(), background_elem[i].x, background_elem[i].y - 3, 3, 2, '$');
+				sprite[sprites_count - 1].vertical_speed = -0.7;
+			}
+			
+			(*obj).y -= (*obj).vertical_speed;
+			(*obj).vertical_speed = 0;
+			
+			if (background_elem[i].kind == '+')
+			{
+				current_level++;
+				if (current_level > max_level) current_level = 1;
+				
+				system("color 2F");
+				Sleep(500);
+				create_level(current_level);
+			}
+			break;
+		}
+}
+
+void horizontal_move_object(GameObject *obj)
+{
+	obj[0].x += obj[0].horizontal_speed;
+	
+	for (int i = 0; i < background_elems_count; i++)
+		if (check_collision(obj[0], background_elem[i]))
+		{
+			obj[0].x -= obj[0].horizontal_speed;
+			obj[0].horizontal_speed = -obj[0].horizontal_speed;
+			return;
+		}
+	
+	if (obj[0].kind == 'o')
+	{
+		GameObject tmp = *obj;
+		vertical_move_object(&tmp);
+		if (tmp.isFly == TRUE)
+		{
+			obj[0].x -= obj[0].horizontal_speed;
+			obj[0].horizontal_speed = -obj[0].horizontal_speed;	
+		}
+	}
+}
+
+bool check_collision(GameObject o1, GameObject o2)
 {
 	return ((o1.x + o1.width) > o2.x) && (o1.x < (o2.x + o2.width)) &&
 		((o1.y + o1.height) > o2.y) && (o1.y < (o2.y + o2.height));
 }
 
-TObject *GetNewBrick()
-{
-	brickLength++;
-	brick = (TObject*)realloc(brick, sizeof(*brick) * brickLength);
-	return brick + brickLength - 1;
-}
-
-TObject *GetNewMoving()
-{
-	movingLength++;
-	moving = (TObject*)realloc(moving, sizeof(*moving) * movingLength);
-	return moving + movingLength - 1;
-}
-
-void PutScoreOnMap()
-{
-	char c[30];
-	sprintf(c, "Score: %d", score);
-	int len = strlen(c);
-	for (int i = 0; i < len; i++)
-	{
-		map[1][i + 5] = c[i];
-	}
-}
-
-void CreateLevel(int lvl)
+void create_level(int level)
 {
 	system("color 9F");
 	
-	brickLength = 0;
-	brick = (TObject*)realloc(brick, 0);
-	movingLength = 0;
-	moving = (TObject*)realloc(moving, 0);
-	InitObject(&mario, 39, 10, 3, 3, '@');
+	background_elems_count = 0;
+	background_elem = (GameObject*)realloc(background_elem, 0);
+	sprites_count = 0;
+	sprite = (GameObject*)realloc(sprite, 0);
+	init_object(&player, 39, 10, 3, 3, '@');
 	score = 0;
 	
-	if (lvl == 1)
+	if (level == 1)
 	{
-		InitObject(GetNewBrick(), 20, 20, 40, 5, '#');
-			InitObject(GetNewBrick(), 30, 10, 5, 3, '?');
-			InitObject(GetNewBrick(), 50, 10, 5, 3, '?');		
-		InitObject(GetNewBrick(), 60, 15, 40, 10, '#');
-			InitObject(GetNewBrick(), 60, 5, 10, 3, '-');
-			InitObject(GetNewBrick(), 70, 5, 5, 3, '?');
-			InitObject(GetNewBrick(), 75, 5, 5, 3, '-');
-			InitObject(GetNewBrick(), 80, 5, 5, 3, '?');
-			InitObject(GetNewBrick(), 85, 5, 10, 3, '-');
-		InitObject(GetNewBrick(), 100, 20, 20, 5, '#');
-		InitObject(GetNewBrick(), 120, 15, 10, 10, '#');
-		InitObject(GetNewBrick(), 150, 20, 40, 5, '#');
-		InitObject(GetNewBrick(), 210, 15, 10, 10, '+');
+		init_object(add_new_background_elem(), 20, 20, 40, 5, '#');		
+		init_object(add_new_background_elem(), 60, 15, 40, 10, '#');
+		init_object(add_new_background_elem(), 100, 20, 20, 5, '#');
+		init_object(add_new_background_elem(), 120, 15, 10, 10, '#');
+		init_object(add_new_background_elem(), 150, 20, 40, 5, '#');
+		init_object(add_new_background_elem(), 30, 10, 5, 3, '?');
+		init_object(add_new_background_elem(), 50, 10, 5, 3, '?');
+		init_object(add_new_background_elem(), 70, 5, 5, 3, '?');
+		init_object(add_new_background_elem(), 80, 5, 5, 3, '?');
+		init_object(add_new_background_elem(), 60, 5, 10, 3, '-');
+		init_object(add_new_background_elem(), 75, 5, 5, 3, '-');
+		init_object(add_new_background_elem(), 85, 5, 10, 3, '-');
+		init_object(add_new_background_elem(), 210, 15, 10, 10, '+');
 
-		InitObject(GetNewMoving(), 25, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 80, 10, 3, 2, 'o');		
+		init_object(add_new_sprite(), 25, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 80, 10, 3, 2, 'o');		
 	}
 	
-	if (lvl == 2)
+	if (level == 2)
 	{
-		InitObject(GetNewBrick(), 20, 20, 40, 5, '#');
-		InitObject(GetNewBrick(), 60, 15, 10, 10, '#');
-		InitObject(GetNewBrick(), 80, 20, 20, 5, '#');
-		InitObject(GetNewBrick(), 120, 15, 10, 10, '#');
-		InitObject(GetNewBrick(), 150, 20, 40, 5, '#');
-		InitObject(GetNewBrick(), 210, 15, 10, 10, '+');
+		init_object(add_new_background_elem(), 20, 20, 40, 5, '#');
+		init_object(add_new_background_elem(), 60, 15, 10, 10, '#');
+		init_object(add_new_background_elem(), 80, 20, 20, 5, '#');
+		init_object(add_new_background_elem(), 120, 15, 10, 10, '#');
+		init_object(add_new_background_elem(), 150, 20, 40, 5, '#');
+		init_object(add_new_background_elem(), 210, 15, 10, 10, '+');
 		
-		InitObject(GetNewMoving(), 25, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 80, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 65, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 120, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 160, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 175, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 25, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 80, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 65, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 120, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 160, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 175, 10, 3, 2, 'o');
 	}
-	if (lvl == 3)
+	if (level == 3)
 	{
-		InitObject(GetNewBrick(), 20, 20, 40, 5, '#');
-		InitObject(GetNewBrick(), 80, 20, 15, 5, '#');
-		InitObject(GetNewBrick(), 120, 15, 15, 10, '#');
-		InitObject(GetNewBrick(), 160, 10, 15, 15, '+');
+		init_object(add_new_background_elem(), 20, 20, 40, 5, '#');
+		init_object(add_new_background_elem(), 80, 20, 15, 5, '#');
+		init_object(add_new_background_elem(), 120, 15, 15, 10, '#');
+		init_object(add_new_background_elem(), 160, 10, 15, 15, '+');
 		
-		InitObject(GetNewMoving(), 25, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 50, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 80, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 90, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 120, 10, 3, 2, 'o');
-		InitObject(GetNewMoving(), 130, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 25, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 50, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 80, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 90, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 120, 10, 3, 2, 'o');
+		init_object(add_new_sprite(), 130, 10, 3, 2, 'o');
 	}
 	
-	maxlvl = 3;
+	max_level = 3;
 }
 
-int main()
+void player_collision_model()
 {
-	CreateLevel(level);
-
-	do
-	{
-		ClearMap();
-
-		if ((mario.isFly == FALSE) && (GetKeyState(VK_SPACE) < 0)) mario.vertSpeed = -1;
-		if (GetKeyState('A') < 0) HorisonMoveMap(1);
-		if (GetKeyState('D') < 0) HorisonMoveMap(-1);
-
-		if (mario.y > mapHeight) PlayerDead();
-
-		VertMoveObject(&mario);
-		MarioCollision();
-		for (int i = 0; i < brickLength; i++)
-			PutObjectOnMap(brick[i]);		
-		for (int i = 0; i < movingLength; i++)
+	for (int i = 0; i < sprites_count; i++)
+		if (check_collision(player, sprite[i]))
 		{
-			VertMoveObject(moving + i);
-			HorizonMoveObject(moving + i);
-			if (moving[i].y > mapHeight)
+			if (sprite[i].kind == 'o')
 			{
-				DeleteMoving(i);
+				if ((player.isFly == TRUE)
+					&& (player.vertical_speed > 0)
+					&& (player.y + player.height < sprite[i].y + sprite[i].height) * 0.5)
+				{
+					score += 50;
+					remove_sprite(i);
+					i--;
+					continue;
+				}
+				else
+					kill_player();
+			}
+			
+			if (sprite[i].kind == '$')
+			{
+				score += 100;
+				remove_sprite(i);
 				i--;
 				continue;
 			}
-			PutObjectOnMap(moving[i]);
 		}
-		PutObjectOnMap(mario);
-		PutScoreOnMap();
+}
 
-		setCur(0, 0);
-		showMap();
-
-		Sleep(10);
-	} 
-	while (GetKeyState(VK_ESCAPE) >= 0);
-
-	return 0;
+void kill_player()
+{
+	system("color 4F");
+	Sleep(500);
+	create_level(current_level);
 }
