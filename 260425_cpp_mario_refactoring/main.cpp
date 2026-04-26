@@ -22,8 +22,8 @@ GameObject player;
 GameObject* background_elem = nullptr;
 int background_elems_count = 0;
 
-GameObject* sprite = nullptr;
-int sprites_count = 0;
+GameObject* enemy = nullptr;
+int enemies_count = 0;
 
 int current_level = 1;
 int score = 0;
@@ -40,8 +40,8 @@ void show_score();
 void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y);
 void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind);
 GameObject *add_new_background_elem();
-GameObject *add_new_sprite();
-void remove_sprite(int index);
+GameObject *add_new_enemy();
+void remove_enemy(int index);
 
 void vertical_move_object(GameObject* obj);
 void horizontal_move_object(GameObject *obj);
@@ -71,17 +71,17 @@ int main()
 		for (int i = 0; i < background_elems_count; i++)
 			add_object_on_map(background_elem[i]);	
 		
-		for (int i = 0; i < sprites_count; i++)
+		for (int i = 0; i < enemies_count; i++)
 		{
-			vertical_move_object(&sprite[i]);
-			horizontal_move_object(&sprite[i]);
-			if (sprite[i].y > MAP_HEIGHT)
+			vertical_move_object(&enemy[i]);
+			horizontal_move_object(&enemy[i]);
+			if (enemy[i].y > MAP_HEIGHT)
 			{
-				remove_sprite(i);
+				remove_enemy(i);
 				i--;
 				continue;
 			}
-			add_object_on_map(sprite[i]);
+			add_object_on_map(enemy[i]);
 		}
 		add_object_on_map(player);
 		show_score();
@@ -92,6 +92,9 @@ int main()
 		Sleep(10);
 	} 
 	while (GetKeyState(VK_ESCAPE) >= 0);
+	
+	free(background_elem);
+	free(enemy);
 
 	return 0;
 }
@@ -126,8 +129,8 @@ void scroll_map(float dx)
 	
 	for (int i = 0; i < background_elems_count; i++)
 		background_elem[i].x += dx;	
-	for (int i = 0; i < sprites_count; i++)
-		sprite[i].x += dx;
+	for (int i = 0; i < enemies_count; i++)
+		enemy[i].x += dx;
 }
 
 void set_cursor(int x, int y)
@@ -182,25 +185,40 @@ void init_object(GameObject* obj, float init_x, float init_y, float init_width, 
 	obj->isFly = false;
 }
 
-GameObject *add_new_background_elem()
+GameObject* add_new_background_elem()
 {
-	background_elems_count++;
-	background_elem = (GameObject*)realloc(background_elem, sizeof(*background_elem) * background_elems_count);
-	return &background_elem[background_elems_count - 1];
+    background_elems_count++;
+    GameObject* temp = (GameObject*)realloc(background_elem, sizeof(GameObject) * background_elems_count);
+    if (temp != nullptr)
+        background_elem = temp;
+    return &background_elem[background_elems_count - 1];
 }
 
-GameObject *add_new_sprite()
+GameObject* add_new_enemy()
 {
-	sprites_count++;
-	sprite = (GameObject*)realloc(sprite, sizeof(*sprite) * sprites_count);
-	return &sprite[sprites_count - 1];
+    enemies_count++;
+    GameObject* temp = (GameObject*)realloc(enemy, sizeof(GameObject) * enemies_count);
+    if (temp != nullptr)
+        enemy = temp;
+    return &enemy[enemies_count - 1];
 }
 
-void remove_sprite(int index)
+void remove_enemy(int index)
 {
-	sprites_count--;
-	sprite[index] = sprite[sprites_count];
-	sprite = (GameObject*)realloc(sprite, sizeof(*sprite) * sprites_count);
+    enemies_count--;
+    enemy[index] = enemy[enemies_count];
+
+    if (enemies_count == 0)
+    {
+        free(enemy);
+        enemy = nullptr;
+    }
+    else
+    {
+        GameObject* temp = (GameObject*)realloc(enemy, sizeof(GameObject) * enemies_count);
+        if (temp != nullptr)
+            enemy = temp;
+    }
 }
 
 void vertical_move_object(GameObject* obj)
@@ -217,8 +235,8 @@ void vertical_move_object(GameObject* obj)
 			if ((background_elem[i].kind == '?') && (obj->vertical_speed < 0) && (obj == &player))
 			{
 				background_elem[i].kind = '-';
-				init_object(add_new_sprite(), background_elem[i].x, background_elem[i].y - 3, 3, 2, '$');
-				sprite[sprites_count - 1].vertical_speed = -0.7;
+				init_object(add_new_enemy(), background_elem[i].x, background_elem[i].y - 3, 3, 2, '$');
+				enemy[enemies_count - 1].vertical_speed = -0.7;
 			}
 			
 			obj->y -= obj->vertical_speed;
@@ -273,11 +291,13 @@ void create_level(int level)
 {
 	system("color 9F");
 	
-	background_elems_count = 0;
-	background_elem = (GameObject*)realloc(background_elem, 0);
-	
-	sprites_count = 0;
-	sprite = (GameObject*)realloc(sprite, 0);
+    free(background_elem);
+    background_elem = nullptr;
+    background_elems_count = 0;
+
+    free(enemy);
+    enemy = nullptr;
+    enemies_count = 0;
 	
 	init_object(&player, 39, 10, 3, 3, '@');
 	score = 0;
@@ -298,8 +318,8 @@ void create_level(int level)
 		init_object(add_new_background_elem(), 85, 5, 10, 3, '-');
 		init_object(add_new_background_elem(), 210, 15, 10, 10, '+');
 
-		init_object(add_new_sprite(), 25, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 80, 10, 3, 2, 'o');		
+		init_object(add_new_enemy(), 25, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 80, 10, 3, 2, 'o');		
 	}
 	
 	if (level == 2)
@@ -311,12 +331,12 @@ void create_level(int level)
 		init_object(add_new_background_elem(), 150, 20, 40, 5, '#');
 		init_object(add_new_background_elem(), 210, 15, 10, 10, '+');
 		
-		init_object(add_new_sprite(), 25, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 80, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 65, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 120, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 160, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 175, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 25, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 80, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 65, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 120, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 160, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 175, 10, 3, 2, 'o');
 	}
 	if (level == 3)
 	{
@@ -325,28 +345,28 @@ void create_level(int level)
 		init_object(add_new_background_elem(), 120, 15, 15, 10, '#');
 		init_object(add_new_background_elem(), 160, 10, 15, 15, '+');
 		
-		init_object(add_new_sprite(), 25, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 50, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 80, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 90, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 120, 10, 3, 2, 'o');
-		init_object(add_new_sprite(), 130, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 25, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 50, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 80, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 90, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 120, 10, 3, 2, 'o');
+		init_object(add_new_enemy(), 130, 10, 3, 2, 'o');
 	}
 }
 
 void player_collision_model()
 {
-	for (int i = 0; i < sprites_count; i++)
-		if (check_collision(player, sprite[i]))
+	for (int i = 0; i < enemies_count; i++)
+		if (check_collision(player, enemy[i]))
 		{
-			if (sprite[i].kind == 'o')
+			if (enemy[i].kind == 'o')
 			{
 				if (player.isFly == true
 					&& player.vertical_speed > 0
-					&& player.y + player.height < sprite[i].y + sprite[i].height * 0.5)
+					&& player.y + player.height < enemy[i].y + enemy[i].height * 0.5)
 				{
 					score += 50;
-					remove_sprite(i);
+					remove_enemy(i);
 					i--;
 					continue;
 				}
@@ -354,10 +374,10 @@ void player_collision_model()
 					kill_player();
 			}
 			
-			if (sprite[i].kind == '$')
+			if (enemy[i].kind == '$')
 			{
 				score += 100;
-				remove_sprite(i);
+				remove_enemy(i);
 				i--;
 				continue;
 			}
