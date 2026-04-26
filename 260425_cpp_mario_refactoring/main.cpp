@@ -1,6 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <iostream>
+#include <sstream>
+#include <cstdlib>
+#include <cmath>
 #include <windows.h>
 
 const int MAP_WIDTH = 80;
@@ -19,20 +20,20 @@ char map[MAP_HEIGHT][MAP_WIDTH + 1];
 GameObject player;
 
 GameObject* background_elem = nullptr;
-int background_elems_count;
+int background_elems_count = 0;
 
 GameObject* sprite = nullptr;
-int sprites_count;
+int sprites_count = 0;
 
 int current_level = 1;
-int score;
-int max_level;
+int score = 0;
+int max_level = 3;
 
 void clear_map();
 void show_map();
 void scroll_map(float dx);
 void set_cursor(int x, int y);
-void add_object_on_map(GameObject obj);
+void add_object_on_map(const GameObject& obj);
 bool object_within_map(int x, int y);
 void show_score();
 
@@ -40,11 +41,11 @@ void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y);
 void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind);
 GameObject *add_new_background_elem();
 GameObject *add_new_sprite();
-void remove_sprite(int i);
+void remove_sprite(int index);
 
 void vertical_move_object(GameObject* obj);
 void horizontal_move_object(GameObject *obj);
-bool check_collision(GameObject o1, GameObject o2);
+bool check_collision(const GameObject& obj_1, const GameObject& obj_2);
 
 void create_level(int level);
 void player_collision_model();
@@ -58,7 +59,7 @@ int main()
 	{
 		clear_map();
 
-		if ((player.isFly == FALSE) && (GetKeyState(VK_SPACE) < 0)) player.vertical_speed = -1;
+		if (!player.isFly && GetKeyState(VK_SPACE) < 0) player.vertical_speed = -1;
 		if (GetKeyState('A') < 0) scroll_map(1);
 		if (GetKeyState('D') < 0) scroll_map(-1);
 
@@ -66,12 +67,14 @@ int main()
 
 		vertical_move_object(&player);
 		player_collision_model();
+		
 		for (int i = 0; i < background_elems_count; i++)
-			add_object_on_map(background_elem[i]);		
+			add_object_on_map(background_elem[i]);	
+		
 		for (int i = 0; i < sprites_count; i++)
 		{
-			vertical_move_object(sprite + i);
-			horizontal_move_object(sprite + i);
+			vertical_move_object(&sprite[i]);
+			horizontal_move_object(&sprite[i]);
 			if (sprite[i].y > MAP_HEIGHT)
 			{
 				remove_sprite(i);
@@ -99,14 +102,15 @@ void clear_map()
 		map[0][i] = ' ';
 	map[0][MAP_WIDTH] = '\0';
 	for (int j = 0; j < MAP_HEIGHT; j++)
-		sprintf(map[j], map[0]);
+        for (int k = 0; k < MAP_WIDTH + 1; k++)
+            map[j][k] = map[0][k];
 }
 
 void show_map()
 {
 	map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = '\0';
 	for (int j = 0; j < MAP_HEIGHT; j++)
-		printf("%s\n", map[j]);
+		std::cout << map[j] << '\n';
 }
 
 void scroll_map(float dx)
@@ -134,7 +138,7 @@ void set_cursor(int x, int y)
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
-void add_object_on_map(GameObject obj)
+void add_object_on_map(const GameObject& obj)
 {
 	int int_x = (int)round(obj.x);
 	int int_y = (int)round(obj.y);
@@ -149,78 +153,76 @@ void add_object_on_map(GameObject obj)
 
 bool object_within_map(int x, int y)
 {
-	return ((x >= 0) && (x < MAP_WIDTH) && (y >= 0) && (y < MAP_HEIGHT));
+	return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
 }
 
 void show_score()
 {
-	char score_text[30];
-	sprintf(score_text, "Score: %d", score);
-	int length = strlen(score_text);
-	for (int i = 0; i < length; i++)
-	{
-		map[1][i + 5] = score_text[i];
-	}
+	std::ostringstream ss;
+	ss << "Score: " << score;
+	std::string text = ss.str();
+	for (int i = 0; i < text.length(); i++)
+		map[1][i + 5] = text[i];
 }
 
 void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y)
 {
-	(*obj).x = obj_pos_x;
-	(*obj).y = obj_pos_y;
+	obj->x = obj_pos_x;
+	obj->y = obj_pos_y;
 }
 
 void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind)
 {
 	set_object_pos(obj, init_x, init_y);
-	(*obj).width = init_width;
-	(*obj).height = init_height;
-	(*obj).vertical_speed = 0;
-	(*obj).kind = init_kind;
-	(*obj).horizontal_speed = 0.2;
-	
+	obj->width = init_width;
+	obj->height = init_height;
+	obj->vertical_speed = 0;
+	obj->kind = init_kind;
+	obj->horizontal_speed = 0.2;
+	obj->isFly = false;
 }
 
 GameObject *add_new_background_elem()
 {
 	background_elems_count++;
 	background_elem = (GameObject*)realloc(background_elem, sizeof(*background_elem) * background_elems_count);
-	return background_elem + background_elems_count - 1;
+	return &background_elem[background_elems_count - 1];
 }
 
 GameObject *add_new_sprite()
 {
 	sprites_count++;
 	sprite = (GameObject*)realloc(sprite, sizeof(*sprite) * sprites_count);
-	return sprite + sprites_count - 1;
+	return &sprite[sprites_count - 1];
 }
 
-void remove_sprite(int i)
+void remove_sprite(int index)
 {
 	sprites_count--;
-	sprite[i] = sprite[sprites_count];
+	sprite[index] = sprite[sprites_count];
 	sprite = (GameObject*)realloc(sprite, sizeof(*sprite) * sprites_count);
 }
 
 void vertical_move_object(GameObject* obj)
 {
-	(*obj).vertical_speed += 0.05;
-	(*obj).isFly = TRUE;
-	set_object_pos(obj, (*obj).x, (*obj).y + (*obj).vertical_speed);
+	obj->vertical_speed += 0.05;
+	obj->isFly = true;
+	set_object_pos(obj, obj->x, obj->y + obj->vertical_speed);
 	for (int i = 0; i < background_elems_count; i++)
 		if (check_collision(*obj, background_elem[i]))
 		{
-			if (obj[0].vertical_speed > 0)
-				obj[0].isFly = FALSE;
+			if (obj->vertical_speed > 0)
+				obj->isFly = false;
 			
-			if ((background_elem[i].kind == '?') && (obj[0].vertical_speed < 0) && (obj == &player))
+			if ((background_elem[i].kind == '?') && (obj->vertical_speed < 0) && (obj == &player))
 			{
 				background_elem[i].kind = '-';
 				init_object(add_new_sprite(), background_elem[i].x, background_elem[i].y - 3, 3, 2, '$');
 				sprite[sprites_count - 1].vertical_speed = -0.7;
 			}
 			
-			(*obj).y -= (*obj).vertical_speed;
-			(*obj).vertical_speed = 0;
+			obj->y -= obj->vertical_speed;
+			obj->vertical_speed = 0;
 			
 			if (background_elem[i].kind == '+')
 			{
@@ -237,32 +239,34 @@ void vertical_move_object(GameObject* obj)
 
 void horizontal_move_object(GameObject *obj)
 {
-	obj[0].x += obj[0].horizontal_speed;
+	obj->x += obj->horizontal_speed;
 	
 	for (int i = 0; i < background_elems_count; i++)
-		if (check_collision(obj[0], background_elem[i]))
+		if (check_collision(*obj, background_elem[i]))
 		{
-			obj[0].x -= obj[0].horizontal_speed;
-			obj[0].horizontal_speed = -obj[0].horizontal_speed;
+			obj->x -= obj->horizontal_speed;
+			obj->horizontal_speed = -obj->horizontal_speed;
 			return;
 		}
 	
-	if (obj[0].kind == 'o')
+	if (obj->kind == 'o')
 	{
 		GameObject tmp = *obj;
 		vertical_move_object(&tmp);
-		if (tmp.isFly == TRUE)
+		if (tmp.isFly)
 		{
-			obj[0].x -= obj[0].horizontal_speed;
-			obj[0].horizontal_speed = -obj[0].horizontal_speed;	
+			obj->x -= obj->horizontal_speed;
+			obj->horizontal_speed = -obj->horizontal_speed;	
 		}
 	}
 }
 
-bool check_collision(GameObject o1, GameObject o2)
+bool check_collision(const GameObject& obj_1, const GameObject& obj_2)
 {
-	return ((o1.x + o1.width) > o2.x) && (o1.x < (o2.x + o2.width)) &&
-		((o1.y + o1.height) > o2.y) && (o1.y < (o2.y + o2.height));
+	return (obj_1.x + obj_1.width) > obj_2.x
+	&& obj_1.x < (obj_2.x + obj_2.width)
+	&& (obj_1.y + obj_1.height) > obj_2.y 
+	&& obj_1.y < (obj_2.y + obj_2.height);
 }
 
 void create_level(int level)
@@ -271,8 +275,10 @@ void create_level(int level)
 	
 	background_elems_count = 0;
 	background_elem = (GameObject*)realloc(background_elem, 0);
+	
 	sprites_count = 0;
 	sprite = (GameObject*)realloc(sprite, 0);
+	
 	init_object(&player, 39, 10, 3, 3, '@');
 	score = 0;
 	
@@ -326,8 +332,6 @@ void create_level(int level)
 		init_object(add_new_sprite(), 120, 10, 3, 2, 'o');
 		init_object(add_new_sprite(), 130, 10, 3, 2, 'o');
 	}
-	
-	max_level = 3;
 }
 
 void player_collision_model()
@@ -337,9 +341,9 @@ void player_collision_model()
 		{
 			if (sprite[i].kind == 'o')
 			{
-				if ((player.isFly == TRUE)
-					&& (player.vertical_speed > 0)
-					&& (player.y + player.height < sprite[i].y + sprite[i].height) * 0.5)
+				if (player.isFly == true
+					&& player.vertical_speed > 0
+					&& player.y + player.height < sprite[i].y + sprite[i].height * 0.5)
 				{
 					score += 50;
 					remove_sprite(i);
