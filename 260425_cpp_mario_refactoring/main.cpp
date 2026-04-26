@@ -29,27 +29,24 @@ int current_level = 1;
 int score = 0;
 int max_level = 3;
 
-void clear_map();
-void show_map();
-void scroll_map(float dx);
-void set_cursor(int x, int y);
 void add_object_on_map(const GameObject& obj);
-bool object_within_map(int x, int y);
-void show_score();
-
-void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y);
-void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind);
 GameObject *add_new_background_elem();
 GameObject *add_new_enemy();
-void remove_enemy(int index);
-
-void vertical_move_object(GameObject* obj);
-void horizontal_move_object(GameObject *obj);
+void clear_map();
 bool check_collision(const GameObject& obj_1, const GameObject& obj_2);
-
 void create_level(int level);
-void player_collision_model();
+void horizontal_move_object(GameObject *obj);
+void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind);
 void kill_player();
+bool object_within_map(int x, int y);
+void player_collision_model();
+void remove_enemy(int index);
+void scroll_map(float dx);
+void set_cursor(int x, int y);
+void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y);
+void show_map();
+void show_score();
+void vertical_move_object(GameObject* obj);
 
 int main()
 {
@@ -99,48 +96,6 @@ int main()
 	return 0;
 }
 
-void clear_map()
-{
-	for (int i = 0; i < MAP_WIDTH; i++)
-		map[0][i] = ' ';
-	map[0][MAP_WIDTH] = '\0';
-	for (int j = 0; j < MAP_HEIGHT; j++)
-        for (int k = 0; k < MAP_WIDTH + 1; k++)
-            map[j][k] = map[0][k];
-}
-
-void show_map()
-{
-	map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = '\0';
-	for (int j = 0; j < MAP_HEIGHT; j++)
-		std::cout << map[j] << '\n';
-}
-
-void scroll_map(float dx)
-{
-	player.x -= dx;
-	for (int i = 0; i < background_elems_count; i++)
-		if (check_collision(player, background_elem[i]))
-		{
-			player.x += dx;
-			return;
-		}
-	player.x += dx;
-	
-	for (int i = 0; i < background_elems_count; i++)
-		background_elem[i].x += dx;	
-	for (int i = 0; i < enemies_count; i++)
-		enemy[i].x += dx;
-}
-
-void set_cursor(int x, int y)
-{
-	COORD coord;
-	coord.X = x;
-	coord.Y = y;
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-}
-
 void add_object_on_map(const GameObject& obj)
 {
 	int int_x = (int)round(obj.x);
@@ -152,37 +107,6 @@ void add_object_on_map(const GameObject& obj)
 		for (int j = int_y; j < (int_y + int_height); j++)
 			if (object_within_map(i, j))
 				map[j][i] = obj.kind;
-}
-
-bool object_within_map(int x, int y)
-{
-	return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
-}
-
-void show_score()
-{
-	std::ostringstream ss;
-	ss << "Score: " << score;
-	std::string text = ss.str();
-	for (int i = 0; i < text.length(); i++)
-		map[1][i + 5] = text[i];
-}
-
-void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y)
-{
-	obj->x = obj_pos_x;
-	obj->y = obj_pos_y;
-}
-
-void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind)
-{
-	set_object_pos(obj, init_x, init_y);
-	obj->width = init_width;
-	obj->height = init_height;
-	obj->vertical_speed = 0;
-	obj->kind = init_kind;
-	obj->horizontal_speed = 0.2;
-	obj->isFly = false;
 }
 
 GameObject* add_new_background_elem()
@@ -203,88 +127,22 @@ GameObject* add_new_enemy()
     return &enemy[enemies_count - 1];
 }
 
-void remove_enemy(int index)
-{
-    enemies_count--;
-    enemy[index] = enemy[enemies_count];
-
-    if (enemies_count == 0)
-    {
-        free(enemy);
-        enemy = nullptr;
-    }
-    else
-    {
-        GameObject* temp = (GameObject*)realloc(enemy, sizeof(GameObject) * enemies_count);
-        if (temp != nullptr)
-            enemy = temp;
-    }
-}
-
-void vertical_move_object(GameObject* obj)
-{
-	obj->vertical_speed += 0.05;
-	obj->isFly = true;
-	set_object_pos(obj, obj->x, obj->y + obj->vertical_speed);
-	for (int i = 0; i < background_elems_count; i++)
-		if (check_collision(*obj, background_elem[i]))
-		{
-			if (obj->vertical_speed > 0)
-				obj->isFly = false;
-			
-			if ((background_elem[i].kind == '?') && (obj->vertical_speed < 0) && (obj == &player))
-			{
-				background_elem[i].kind = '-';
-				init_object(add_new_enemy(), background_elem[i].x, background_elem[i].y - 3, 3, 2, '$');
-				enemy[enemies_count - 1].vertical_speed = -0.7;
-			}
-			
-			obj->y -= obj->vertical_speed;
-			obj->vertical_speed = 0;
-			
-			if (background_elem[i].kind == '+')
-			{
-				current_level++;
-				if (current_level > max_level) current_level = 1;
-				
-				system("color 2F");
-				Sleep(500);
-				create_level(current_level);
-			}
-			break;
-		}
-}
-
-void horizontal_move_object(GameObject *obj)
-{
-	obj->x += obj->horizontal_speed;
-	
-	for (int i = 0; i < background_elems_count; i++)
-		if (check_collision(*obj, background_elem[i]))
-		{
-			obj->x -= obj->horizontal_speed;
-			obj->horizontal_speed = -obj->horizontal_speed;
-			return;
-		}
-	
-	if (obj->kind == 'o')
-	{
-		GameObject tmp = *obj;
-		vertical_move_object(&tmp);
-		if (tmp.isFly)
-		{
-			obj->x -= obj->horizontal_speed;
-			obj->horizontal_speed = -obj->horizontal_speed;	
-		}
-	}
-}
-
 bool check_collision(const GameObject& obj_1, const GameObject& obj_2)
 {
 	return (obj_1.x + obj_1.width) > obj_2.x
 	&& obj_1.x < (obj_2.x + obj_2.width)
 	&& (obj_1.y + obj_1.height) > obj_2.y 
 	&& obj_1.y < (obj_2.y + obj_2.height);
+}
+
+void clear_map()
+{
+	for (int i = 0; i < MAP_WIDTH; i++)
+		map[0][i] = ' ';
+	map[0][MAP_WIDTH] = '\0';
+	for (int j = 0; j < MAP_HEIGHT; j++)
+        for (int k = 0; k < MAP_WIDTH + 1; k++)
+            map[j][k] = map[0][k];
 }
 
 void create_level(int level)
@@ -354,6 +212,53 @@ void create_level(int level)
 	}
 }
 
+void horizontal_move_object(GameObject *obj)
+{
+	obj->x += obj->horizontal_speed;
+	
+	for (int i = 0; i < background_elems_count; i++)
+		if (check_collision(*obj, background_elem[i]))
+		{
+			obj->x -= obj->horizontal_speed;
+			obj->horizontal_speed = -obj->horizontal_speed;
+			return;
+		}
+	
+	if (obj->kind == 'o')
+	{
+		GameObject tmp = *obj;
+		vertical_move_object(&tmp);
+		if (tmp.isFly)
+		{
+			obj->x -= obj->horizontal_speed;
+			obj->horizontal_speed = -obj->horizontal_speed;	
+		}
+	}
+}
+
+void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind)
+{
+	set_object_pos(obj, init_x, init_y);
+	obj->width = init_width;
+	obj->height = init_height;
+	obj->vertical_speed = 0;
+	obj->kind = init_kind;
+	obj->horizontal_speed = 0.2;
+	obj->isFly = false;
+}
+
+void kill_player()
+{
+	system("color 4F");
+	Sleep(500);
+	create_level(current_level);
+}
+
+bool object_within_map(int x, int y)
+{
+	return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
+}
+
 void player_collision_model()
 {
 	for (int i = 0; i < enemies_count; i++)
@@ -384,9 +289,101 @@ void player_collision_model()
 		}
 }
 
-void kill_player()
+void remove_enemy(int index)
 {
-	system("color 4F");
-	Sleep(500);
-	create_level(current_level);
+    enemies_count--;
+    enemy[index] = enemy[enemies_count];
+
+    if (enemies_count == 0)
+    {
+        free(enemy);
+        enemy = nullptr;
+    }
+    else
+    {
+        GameObject* temp = (GameObject*)realloc(enemy, sizeof(GameObject) * enemies_count);
+        if (temp != nullptr)
+            enemy = temp;
+    }
+}
+
+void scroll_map(float dx)
+{
+	player.x -= dx;
+	for (int i = 0; i < background_elems_count; i++)
+		if (check_collision(player, background_elem[i]))
+		{
+			player.x += dx;
+			return;
+		}
+	player.x += dx;
+	
+	for (int i = 0; i < background_elems_count; i++)
+		background_elem[i].x += dx;	
+	for (int i = 0; i < enemies_count; i++)
+		enemy[i].x += dx;
+}
+
+void set_cursor(int x, int y)
+{
+	COORD coord;
+	coord.X = x;
+	coord.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y)
+{
+	obj->x = obj_pos_x;
+	obj->y = obj_pos_y;
+}
+
+void show_map()
+{
+	map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = '\0';
+	for (int j = 0; j < MAP_HEIGHT; j++)
+		std::cout << map[j] << '\n';
+}
+
+void show_score()
+{
+	std::ostringstream ss;
+	ss << "Score: " << score;
+	std::string text = ss.str();
+	for (int i = 0; i < text.length(); i++)
+		map[1][i + 5] = text[i];
+}
+
+void vertical_move_object(GameObject* obj)
+{
+	obj->vertical_speed += 0.05;
+	obj->isFly = true;
+	set_object_pos(obj, obj->x, obj->y + obj->vertical_speed);
+	for (int i = 0; i < background_elems_count; i++)
+		if (check_collision(*obj, background_elem[i]))
+		{
+			if (obj->vertical_speed > 0)
+				obj->isFly = false;
+			
+			if ((background_elem[i].kind == '?') && (obj->vertical_speed < 0) && (obj == &player))
+			{
+				background_elem[i].kind = '-';
+				init_object(add_new_enemy(), background_elem[i].x, background_elem[i].y - 3, 3, 2, '$');
+				enemy[enemies_count - 1].vertical_speed = -0.7;
+			}
+			
+			obj->y -= obj->vertical_speed;
+			obj->vertical_speed = 0;
+			
+			if (background_elem[i].kind == '+')
+			{
+				current_level++;
+				if (current_level > max_level) current_level = 1;
+				
+				system("color 2F");
+				Sleep(500);
+				create_level(current_level);
+			}
+			break;
+		}
 }
