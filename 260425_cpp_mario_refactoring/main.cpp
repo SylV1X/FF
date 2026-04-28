@@ -16,7 +16,7 @@ struct GameObject
 	bool isFly;
 };
 
-GameObject player;
+
 
 GameObject* background_elem = nullptr;
 int background_elems_count = 0;
@@ -33,49 +33,49 @@ GameObject *add_new_background_elem();
 GameObject *add_new_enemy();
 void clear_map(char map[MAP_HEIGHT][MAP_WIDTH + 1]);
 bool check_collision(const GameObject& obj_1, const GameObject& obj_2);
-void create_level(int level);
-void horizontal_move_object(GameObject *obj);
+void create_level(int level, GameObject& player);
+void horizontal_move_object(GameObject *obj, GameObject& player);
 void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind);
-void kill_player();
+void kill_player(GameObject& player);
 bool object_within_map(int x, int y);
-void player_collision_model();
+void player_collision_model(GameObject& player);
 void remove_enemy(int index);
-void scroll_map(float dx);
+void scroll_map(float dx, GameObject& player);
 void set_cursor(int x, int y);
 void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y);
 void show_map(char map[MAP_HEIGHT][MAP_WIDTH + 1]);
 void show_score(char map[MAP_HEIGHT][MAP_WIDTH + 1]);
-void vertical_move_object(GameObject* obj);
+void vertical_move_object(GameObject* obj, GameObject& player);
 
 int main()
 {
 	char map[MAP_HEIGHT][MAP_WIDTH + 1];
+	GameObject player;
 	
 	
 	
-	
-	create_level(current_level);
+	create_level(current_level, player);
 
 	do
 	{
 		clear_map(map);
 
 		if (!player.isFly && GetKeyState(VK_SPACE) < 0) player.vertical_speed = -1;
-		if (GetKeyState('A') < 0) scroll_map(1);
-		if (GetKeyState('D') < 0) scroll_map(-1);
+		if (GetKeyState('A') < 0) scroll_map(1, player);
+		if (GetKeyState('D') < 0) scroll_map(-1, player);
 
-		if (player.y > MAP_HEIGHT) kill_player();
+		if (player.y > MAP_HEIGHT) kill_player(player);
 
-		vertical_move_object(&player);
-		player_collision_model();
+		vertical_move_object(&player, player);
+		player_collision_model(player);
 		
 		for (int i = 0; i < background_elems_count; i++)
 			add_object_on_map(map, background_elem[i]);	
 		
 		for (int i = 0; i < enemies_count; i++)
 		{
-			vertical_move_object(&enemy[i]);
-			horizontal_move_object(&enemy[i]);
+			vertical_move_object(&enemy[i], player);
+			horizontal_move_object(&enemy[i], player);
 			if (enemy[i].y > MAP_HEIGHT)
 			{
 				remove_enemy(i);
@@ -149,7 +149,7 @@ void clear_map(char map[MAP_HEIGHT][MAP_WIDTH + 1])
             map[j][k] = map[0][k];
 }
 
-void create_level(int level)
+void create_level(int level, GameObject& player)
 {
 	system("color 9F");
 	
@@ -216,7 +216,7 @@ void create_level(int level)
 	}
 }
 
-void horizontal_move_object(GameObject *obj)
+void horizontal_move_object(GameObject *obj, GameObject& player)
 {
 	obj->x += obj->horizontal_speed;
 	
@@ -231,7 +231,7 @@ void horizontal_move_object(GameObject *obj)
 	if (obj->kind == 'o')
 	{
 		GameObject tmp = *obj;
-		vertical_move_object(&tmp);
+		vertical_move_object(&tmp, player);
 		if (tmp.isFly)
 		{
 			obj->x -= obj->horizontal_speed;
@@ -251,11 +251,11 @@ void init_object(GameObject* obj, float init_x, float init_y, float init_width, 
 	obj->isFly = false;
 }
 
-void kill_player()
+void kill_player(GameObject& player)
 {
 	system("color 4F");
 	Sleep(500);
-	create_level(current_level);
+	create_level(current_level, player);
 }
 
 bool object_within_map(int x, int y)
@@ -263,7 +263,7 @@ bool object_within_map(int x, int y)
 	return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
 }
 
-void player_collision_model()
+void player_collision_model(GameObject& player)
 {
 	for (int i = 0; i < enemies_count; i++)
 		if (check_collision(player, enemy[i]))
@@ -280,7 +280,7 @@ void player_collision_model()
 					continue;
 				}
 				else
-					kill_player();
+					kill_player(player);
 			}
 			
 			if (enemy[i].kind == '$')
@@ -311,7 +311,7 @@ void remove_enemy(int index)
     }
 }
 
-void scroll_map(float dx)
+void scroll_map(float dx, GameObject& player)
 {
 	player.x -= dx;
 	for (int i = 0; i < background_elems_count; i++)
@@ -358,7 +358,7 @@ void show_score(char map[MAP_HEIGHT][MAP_WIDTH + 1])
 		map[1][i + 5] = text[i];
 }
 
-void vertical_move_object(GameObject* obj)
+void vertical_move_object(GameObject* obj, GameObject& player)
 {
 	obj->vertical_speed += 0.05;
 	obj->isFly = true;
@@ -386,7 +386,7 @@ void vertical_move_object(GameObject* obj)
 				
 				system("color 2F");
 				Sleep(500);
-				create_level(current_level);
+				create_level(current_level, player);
 			}
 			break;
 		}
