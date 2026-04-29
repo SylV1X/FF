@@ -15,9 +15,6 @@ struct GameObject
 	char kind;
 	bool isFly;
 };
-
-
-int score = 0;
 int max_level = 3;
 
 void add_object_on_map(char map[MAP_HEIGHT][MAP_WIDTH + 1], const GameObject& obj);
@@ -25,19 +22,19 @@ GameObject *add_new_background_elem(GameObject*& background_elem, int& backgroun
 GameObject *add_new_enemy(GameObject*& enemy, int& enemies_count);
 void clear_map(char map[MAP_HEIGHT][MAP_WIDTH + 1]);
 bool check_collision(const GameObject& obj_1, const GameObject& obj_2);
-void create_level(int current_level, GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count);
-void horizontal_move_object(GameObject *obj, GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int& enemies_count, int& current_level);
+void create_level(int current_level, GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int& score);
+void horizontal_move_object(GameObject *obj, GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int& enemies_count, int& current_level, int& score);
 void init_object(GameObject* obj, float init_x, float init_y, float init_width, float init_height, char init_kind);
-void kill_player(GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int current_level);
+void kill_player(GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int current_level, int& score);
 bool object_within_map(int x, int y);
-void player_collision_model(GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int& enemies_count, int current_level);
+void player_collision_model(GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int& enemies_count, int current_level, int& score);
 void remove_enemy(int index, GameObject*& enemy, int& enemies_count);
 void scroll_map(float dx, GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int enemies_count);
 void set_cursor(int x, int y);
 void set_object_pos(GameObject* obj, float obj_pos_x, float obj_pos_y);
 void show_map(char map[MAP_HEIGHT][MAP_WIDTH + 1]);
-void show_score(char map[MAP_HEIGHT][MAP_WIDTH + 1]);
-void vertical_move_object(GameObject* obj, GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int& current_level);
+void show_score(char map[MAP_HEIGHT][MAP_WIDTH + 1], int score);
+void vertical_move_object(GameObject* obj, GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int& current_level, int& score);
 
 int main()
 {
@@ -48,8 +45,9 @@ int main()
 	GameObject* enemy = nullptr;
 	int enemies_count = 0;
 	int current_level = 1;
+	int score = 0;
 	
-	create_level(current_level, player, background_elem, background_elems_count, enemy, enemies_count);
+	create_level(current_level, player, background_elem, background_elems_count, enemy, enemies_count, score);
 
 	do
 	{
@@ -59,18 +57,18 @@ int main()
 		if (GetKeyState('A') < 0) scroll_map(1, player, background_elem, background_elems_count, enemy, enemies_count);
 		if (GetKeyState('D') < 0) scroll_map(-1, player, background_elem, background_elems_count, enemy, enemies_count);
 
-		if (player.y > MAP_HEIGHT) kill_player(player, background_elem, background_elems_count, enemy, enemies_count, current_level);
+		if (player.y > MAP_HEIGHT) kill_player(player, background_elem, background_elems_count, enemy, enemies_count, current_level, score);
 
-		vertical_move_object(&player, player, background_elem, background_elems_count, enemy, enemies_count, current_level);
-		player_collision_model(player, background_elem, background_elems_count, enemy, enemies_count, current_level);
+		vertical_move_object(&player, player, background_elem, background_elems_count, enemy, enemies_count, current_level, score);
+		player_collision_model(player, background_elem, background_elems_count, enemy, enemies_count, current_level, score);
 		
 		for (int i = 0; i < background_elems_count; i++)
 			add_object_on_map(map, background_elem[i]);	
 		
 		for (int i = 0; i < enemies_count; i++)
 		{
-			vertical_move_object(&enemy[i], player, background_elem, background_elems_count, enemy, enemies_count, current_level);
-			horizontal_move_object(&enemy[i], player, background_elem, background_elems_count, enemy, enemies_count, current_level);
+			vertical_move_object(&enemy[i], player, background_elem, background_elems_count, enemy, enemies_count, current_level, score);
+			horizontal_move_object(&enemy[i], player, background_elem, background_elems_count, enemy, enemies_count, current_level, score);
 			if (enemy[i].y > MAP_HEIGHT)
 			{
 				remove_enemy(i, enemy, enemies_count);
@@ -80,7 +78,7 @@ int main()
 			add_object_on_map(map, enemy[i]);
 		}
 		add_object_on_map(map, player);
-		show_score(map);
+		show_score(map, score);
 
 		set_cursor(0, 0);
 		show_map(map);
@@ -144,7 +142,7 @@ void clear_map(char map[MAP_HEIGHT][MAP_WIDTH + 1])
             map[j][k] = map[0][k];
 }
 
-void create_level(int current_level, GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count)
+void create_level(int current_level, GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int& score)
 {
 	system("color 9F");
 	
@@ -211,7 +209,7 @@ void create_level(int current_level, GameObject& player, GameObject*& background
 	}
 }
 
-void horizontal_move_object(GameObject *obj, GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int& enemies_count, int& current_level)
+void horizontal_move_object(GameObject *obj, GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int& enemies_count, int& current_level, int& score)
 {
 	obj->x += obj->horizontal_speed;
 	
@@ -226,7 +224,7 @@ void horizontal_move_object(GameObject *obj, GameObject& player, GameObject*& ba
 	if (obj->kind == 'o')
 	{
 		GameObject tmp = *obj;
-		vertical_move_object(&tmp, player, background_elem, background_elems_count, enemy, enemies_count, current_level);
+		vertical_move_object(&tmp, player, background_elem, background_elems_count, enemy, enemies_count, current_level, score);
 		if (tmp.isFly)
 		{
 			obj->x -= obj->horizontal_speed;
@@ -246,11 +244,11 @@ void init_object(GameObject* obj, float init_x, float init_y, float init_width, 
 	obj->isFly = false;
 }
 
-void kill_player(GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int current_level)
+void kill_player(GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int current_level, int& score)
 {
 	system("color 4F");
 	Sleep(500);
-	create_level(current_level, player, background_elem, background_elems_count, enemy, enemies_count);
+	create_level(current_level, player, background_elem, background_elems_count, enemy, enemies_count, score);
 }
 
 bool object_within_map(int x, int y)
@@ -258,7 +256,7 @@ bool object_within_map(int x, int y)
 	return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
 }
 
-void player_collision_model(GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int& enemies_count, int current_level)
+void player_collision_model(GameObject& player, GameObject*& background_elem, int background_elems_count, GameObject*& enemy, int& enemies_count, int current_level, int& score)
 {
 	for (int i = 0; i < enemies_count; i++)
 		if (check_collision(player, enemy[i]))
@@ -275,7 +273,7 @@ void player_collision_model(GameObject& player, GameObject*& background_elem, in
 					continue;
 				}
 				else
-					kill_player(player, background_elem, background_elems_count, enemy, enemies_count, current_level);
+					kill_player(player, background_elem, background_elems_count, enemy, enemies_count, current_level, score);
 			}
 			
 			if (enemy[i].kind == '$')
@@ -344,7 +342,7 @@ void show_map(char map[MAP_HEIGHT][MAP_WIDTH + 1])
 		std::cout << map[j] << '\n';
 }
 
-void show_score(char map[MAP_HEIGHT][MAP_WIDTH + 1])
+void show_score(char map[MAP_HEIGHT][MAP_WIDTH + 1], int score)
 {
 	std::ostringstream ss;
 	ss << "Score: " << score;
@@ -353,7 +351,7 @@ void show_score(char map[MAP_HEIGHT][MAP_WIDTH + 1])
 		map[1][i + 5] = text[i];
 }
 
-void vertical_move_object(GameObject* obj, GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int& current_level)
+void vertical_move_object(GameObject* obj, GameObject& player, GameObject*& background_elem, int& background_elems_count, GameObject*& enemy, int& enemies_count, int& current_level, int& score)
 {
 	obj->vertical_speed += 0.05;
 	obj->isFly = true;
@@ -381,7 +379,7 @@ void vertical_move_object(GameObject* obj, GameObject& player, GameObject*& back
 				
 				system("color 2F");
 				Sleep(500);
-				create_level(current_level, player, background_elem, background_elems_count, enemy, enemies_count);
+				create_level(current_level, player, background_elem, background_elems_count, enemy, enemies_count, score);
 			}
 			break;
 		}
