@@ -11,31 +11,60 @@ class GameObject
 		
 		GameObject()
 		{
-			this->x = 0;
-			this->y = 0;
-			this->height = 0;
-			this->width = 0;
-			this->kind = ' '
-		}
-		
-		GameObject(float x, float y)
-		{
-			this->x = x;
-			this->y = y;
+			x = 0;
+			y = 0;
+			height = 0;
+			width = 0;
+			kind = ' ';
 		}
 		
 		void set_object_pos(float obj_pos_x, float obj_pos_y)
 		{
-			this->x = obj_pos_x;
-			this->y = obj_pos_y;
+			x = obj_pos_x;
+			y = obj_pos_y;
 		}
 		
 		void init_object(float init_x, float init_y, float init_width, float init_height, char init_kind)
 		{
 			set_object_pos(init_x, init_y);
-			this->width = init_width;
-			this->height = init_height;
-			this->kind = init_kind;
+			width = init_width;
+			height = init_height;
+			kind = init_kind;
+		}
+
+		bool check_collision(const GameObject& obj)
+		{
+			return (x +  width) > obj.x
+			&& x < (obj.x + obj.width)
+			&& (y +  height) > obj.y 
+			&& y < (obj.y + obj.height);
+		}
+};
+
+class MovingObject: public GameObject
+{
+	public:
+		float vertical_speed;
+		float horizontal_speed;
+		bool ifly;
+		
+		void init_object(float init_x, float init_y, float init_width, float init_height, char init_kind)
+		{
+			GameObject::init_object(init_x, init_y, init_width, init_height, init_kind);
+			vertical_speed = 0;
+			horizontal_speed = 0.2;
+		}
+		
+		void vertical_move_object(const GameObject& obj)
+		{
+			vertical_speed += 0.05;
+			GameObject::set_object_pos(x, y + vertical_speed);
+			
+			if (check_collision(obj))
+			{
+				y -= vertical_speed;
+				vertical_speed = 0;
+			}
 		}
 };
 
@@ -65,28 +94,44 @@ class Map
 				std::cout << map[j] << '\n';
 		}
 		
+		bool object_within_map(int x, int y)
+		{
+			return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
+		}
+		
 		void add_object_on_map(const GameObject& obj)
 		{
 			int int_x = (int)round(obj.x);
 			int int_y = (int)round(obj.y);
 			int int_width = (int)round(obj.width);
 			int int_height = (int)round(obj.height);
-
+			
 			for (int i = int_x; i < (int_x + int_width); i++)
 				for (int j = int_y; j < (int_y + int_height); j++)
-					map[j][i] = obj.kind;
+					if (object_within_map(i, j))
+						map[j][i] = obj.kind;
 		}
 };
 
 int main()
 {
 	Map map;
-	GameObject mario;
+	MovingObject player;
+	player.init_object(39, 10, 3, 3, '@');
+	GameObject background_elem;
+	background_elem.init_object(20, 20, 40, 5, '#');
 	
-	mario.init_object(39, 10, 3, 3, '@');
-	map.clear_map();
-	map.add_object_on_map(mario);
-	map.show_map();
+	do
+	{
+		map.clear_map();
+		player.vertical_move_object(background_elem);
+		map.add_object_on_map(background_elem);
+		map.add_object_on_map(player);
+		map.show_map();
+		
+		Sleep(10);
+	} 
+	while (GetKeyState(VK_ESCAPE) >= 0);
 	
 	return 0;
 }
