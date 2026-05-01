@@ -4,12 +4,13 @@
 
 class GameObject
 {
-	public:
+	private:
 		float x, y;
 		float height, width;
 		char kind;
-		
-		GameObject()
+
+	public:		
+		GameObject() // for derived
 		{
 			x = 0;
 			y = 0;
@@ -39,15 +40,21 @@ class GameObject
 			&& (y +  height) > obj.y 
 			&& y < (obj.y + obj.height);
 		}
+		
+		float get_x() const { return x; }
+		float get_y() const { return y; }
+		float get_height() const { return height; }
+		float get_width() const { return width; }
+		char get_kind() const { return kind; }
 };
 
 class MovingObject: public GameObject
 {
-	public:
+	private:
 		float vertical_speed;
 		float horizontal_speed;
-		bool ifly;
 		
+	public:
 		void init_object(float init_x, float init_y, float init_width, float init_height, char init_kind)
 		{
 			GameObject::init_object(init_x, init_y, init_width, init_height, init_kind);
@@ -58,11 +65,12 @@ class MovingObject: public GameObject
 		void vertical_move_object(const GameObject& obj)
 		{
 			vertical_speed += 0.05;
-			GameObject::set_object_pos(x, y + vertical_speed);
+			float old_y = get_y();
+			GameObject::set_object_pos(get_x(), get_y() + vertical_speed);
 			
 			if (check_collision(obj))
 			{
-				y -= vertical_speed;
+				GameObject::set_object_pos(get_x(), old_y);
 				vertical_speed = 0;
 			}
 		}
@@ -101,15 +109,15 @@ class Map
 		
 		void add_object_on_map(const GameObject& obj)
 		{
-			int int_x = (int)round(obj.x);
-			int int_y = (int)round(obj.y);
-			int int_width = (int)round(obj.width);
-			int int_height = (int)round(obj.height);
+			int int_x = (int)round(obj.get_x());
+			int int_y = (int)round(obj.get_y());
+			int int_width = (int)round(obj.get_width());
+			int int_height = (int)round(obj.get_height());
 			
 			for (int i = int_x; i < (int_x + int_width); i++)
 				for (int j = int_y; j < (int_y + int_height); j++)
 					if (object_within_map(i, j))
-						map[j][i] = obj.kind;
+						map[j][i] = obj.get_kind();
 		}
 };
 
