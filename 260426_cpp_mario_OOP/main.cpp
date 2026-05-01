@@ -69,17 +69,19 @@ class MovingObject: public GameObject
 			horizontal_speed = 0.2;
 		}
 		
-		void vertical_move_object(const GameObject& obj)
+		void vertical_move_object(GameObject*& background_elems, int background_elems_count)
 		{
 			isFly = true;
 			vertical_speed += 0.05;
 			GameObject::set_object_pos(x, y + vertical_speed);
-			
-			if (check_collision(obj))
+			for (int i = 0; i < background_elems_count; i++)
 			{
-				y -= vertical_speed;
-				vertical_speed = 0;
-				isFly = false;
+				if (check_collision(background_elems[i]))
+				{
+					y -= vertical_speed;
+					vertical_speed = 0;
+					isFly = false;
+				}
 			}
 		}
 		
@@ -90,11 +92,17 @@ class MovingObject: public GameObject
 
 class Player: public MovingObject
 {
-public:
+	public:
 		void jump()
 		{
 			if (!isFly && GetKeyState(VK_SPACE) < 0) 
 				 vertical_speed = -1;
+		}
+		
+		void death()
+		{
+			system("color 4F");
+			Sleep(500);
 		}
 };
 
@@ -109,7 +117,7 @@ class Map
 		void clear_map()
 		{
 			for (int i = 0; i < MAP_WIDTH; i++)
-				map[0][i] = '.';
+				map[0][i] = ' ';
 			map[0][MAP_WIDTH] = '\0';
 			for (int j = 1; j < MAP_HEIGHT; j++)
 				for (int k = 0; k < MAP_WIDTH + 1; k++)
@@ -142,40 +150,95 @@ class Map
 						map[j][i] = obj.kind;
 		}
 		
-		void scroll_map( GameObject& obj, float dx)
+		void scroll_map(float dx, GameObject*& background_elems, int background_elems_count)
 		{
-			obj.set_x(obj.x + dx);
+			for (int i = 0; i < background_elems_count; i++)
+				background_elems[i].set_x(background_elems[i].x + dx);	
 		}
 		
-		void forward( GameObject& obj)
+		void forward(GameObject*& background_elems, int background_elems_count)
 		{
 			if (GetKeyState('A') < 0)
-				scroll_map(obj, 1);
+				scroll_map(1, background_elems, background_elems_count);
 		}
 		
-		void back( GameObject& obj)
+		void back(GameObject*& background_elems, int background_elems_count)
 		{
 			if (GetKeyState('D') < 0)
-				scroll_map(obj, -1);
+				scroll_map(-1, background_elems, background_elems_count);
+		}
+};
+
+class Level
+{
+	public:
+		void add_new_background_elem(GameObject*& background_elems, int& background_elems_count, float x, float y, float height, float width, char kind)
+		{
+			GameObject* background_elems_update = new GameObject[background_elems_count + 1];
+			for (int i = 0; i < background_elems_count; i++)
+				background_elems_update[i] = background_elems[i];
+			delete[] background_elems;
+			background_elems = background_elems_update;
+			background_elems[background_elems_count].init_object(x, y, height, width, kind);
+			background_elems_count++;
+		}
+		
+		void delete_background_elem(GameObject*& background_elems, int& background_elems_count)
+		{
+			delete[] background_elems;
+			background_elems = nullptr;
+			background_elems_count = 0;
+		}
+		
+		void create_level(int current_level, GameObject& player, GameObject*& background_elems, int& background_elems_count)
+		{
+			system("color 9F");
+			
+			delete_background_elem(background_elems, background_elems_count);
+			background_elems = nullptr;
+			background_elems_count = 0;
+
+			player.init_object(39, 10, 3, 3, '@');
+			
+			if (current_level == 1)
+			{
+				add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');		
+				add_new_background_elem(background_elems, background_elems_count, 60, 15, 40, 10, '#');
+				add_new_background_elem(background_elems, background_elems_count, 100, 20, 20, 5, '#');
+				add_new_background_elem(background_elems, background_elems_count, 120, 15, 10, 10, '#');
+				add_new_background_elem(background_elems, background_elems_count, 150, 20, 40, 5, '#');
+				add_new_background_elem(background_elems, background_elems_count, 30, 10, 5, 3, '?');
+				add_new_background_elem(background_elems, background_elems_count, 50, 10, 5, 3, '?');
+				add_new_background_elem(background_elems, background_elems_count, 70, 5, 5, 3, '?');
+				add_new_background_elem(background_elems, background_elems_count, 80, 5, 5, 3, '?');
+				add_new_background_elem(background_elems, background_elems_count, 60, 5, 10, 3, '-');
+				add_new_background_elem(background_elems, background_elems_count, 75, 5, 5, 3, '-');
+				add_new_background_elem(background_elems, background_elems_count, 85, 5, 10, 3, '-');
+				add_new_background_elem(background_elems, background_elems_count, 210, 15, 10, 10, '+');
+			}
 		}
 };
 
 int main()
+
 {
-	Map map;
 	Player player;
-	player.init_object(39, 10, 3, 3, '@');
-	GameObject background_elem;
-	background_elem.init_object(20, 20, 40, 5, '#');
+	GameObject* background_elems = nullptr;
+	int background_elems_count = 0;
+	Level level_design;
+	Map map;
+
+	level_design.create_level(1, player, background_elems, background_elems_count);
 	
 	do
 	{
 		map.clear_map();
 		player.jump();
-		map.forward(background_elem);
-		map.back(background_elem);
-		player.vertical_move_object(background_elem);
-		map.add_object_on_map(background_elem);
+		map.forward(background_elems, background_elems_count);
+		map.back(background_elems, background_elems_count);
+		player.vertical_move_object(background_elems, background_elems_count);
+		for (int i = 0; i < background_elems_count; i++)
+			map.add_object_on_map(background_elems[i]);	
 		map.add_object_on_map(player);
 		map.show_map();
 		
