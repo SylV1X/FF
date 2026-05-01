@@ -4,10 +4,11 @@
 
 class GameObject
 {
-	private:
+	protected:
 		float x, y;
 		float height, width;
 		char kind;
+		friend class Map;
 
 	public:		
 		GameObject() // for derived
@@ -46,13 +47,19 @@ class GameObject
 		float get_height() const { return height; }
 		float get_width() const { return width; }
 		char get_kind() const { return kind; }
+		
+		void set_x(float new_x)
+		{
+			x = new_x;
+		}
 };
 
 class MovingObject: public GameObject
 {
-	private:
+	protected:
 		float vertical_speed;
 		float horizontal_speed;
+		bool isFly;
 		
 	public:
 		void init_object(float init_x, float init_y, float init_width, float init_height, char init_kind)
@@ -64,15 +71,30 @@ class MovingObject: public GameObject
 		
 		void vertical_move_object(const GameObject& obj)
 		{
+			isFly = true;
 			vertical_speed += 0.05;
-			float old_y = get_y();
-			GameObject::set_object_pos(get_x(), get_y() + vertical_speed);
+			GameObject::set_object_pos(x, y + vertical_speed);
 			
 			if (check_collision(obj))
 			{
-				GameObject::set_object_pos(get_x(), old_y);
+				y -= vertical_speed;
 				vertical_speed = 0;
+				isFly = false;
 			}
+		}
+		
+		float get_vertical_speed() const { return vertical_speed; }
+		float get_horizontal_speed() const { return horizontal_speed; }
+		bool get_isFly() const { return isFly; }
+};
+
+class Player: public MovingObject
+{
+public:
+		void jump()
+		{
+			if (!isFly && GetKeyState(VK_SPACE) < 0) 
+				 vertical_speed = -1;
 		}
 };
 
@@ -109,22 +131,39 @@ class Map
 		
 		void add_object_on_map(const GameObject& obj)
 		{
-			int int_x = (int)round(obj.get_x());
-			int int_y = (int)round(obj.get_y());
-			int int_width = (int)round(obj.get_width());
-			int int_height = (int)round(obj.get_height());
+			int int_x = (int)round(obj.x);
+			int int_y = (int)round(obj.y);
+			int int_width = (int)round(obj.width);
+			int int_height = (int)round(obj.height);
 			
 			for (int i = int_x; i < (int_x + int_width); i++)
 				for (int j = int_y; j < (int_y + int_height); j++)
 					if (object_within_map(i, j))
-						map[j][i] = obj.get_kind();
+						map[j][i] = obj.kind;
+		}
+		
+		void scroll_map( GameObject& obj, float dx)
+		{
+			obj.set_x(obj.x + dx);
+		}
+		
+		void forward( GameObject& obj)
+		{
+			if (GetKeyState('A') < 0)
+				scroll_map(obj, 1);
+		}
+		
+		void back( GameObject& obj)
+		{
+			if (GetKeyState('D') < 0)
+				scroll_map(obj, -1);
 		}
 };
 
 int main()
 {
 	Map map;
-	MovingObject player;
+	Player player;
 	player.init_object(39, 10, 3, 3, '@');
 	GameObject background_elem;
 	background_elem.init_object(20, 20, 40, 5, '#');
@@ -132,6 +171,9 @@ int main()
 	do
 	{
 		map.clear_map();
+		player.jump();
+		map.forward(background_elem);
+		map.back(background_elem);
 		player.vertical_move_object(background_elem);
 		map.add_object_on_map(background_elem);
 		map.add_object_on_map(player);
