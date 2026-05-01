@@ -84,7 +84,7 @@ class MovingObject: public GameObject
 				}
 			}
 		}
-		
+
 		float get_vertical_speed() const { return vertical_speed; }
 		float get_horizontal_speed() const { return horizontal_speed; }
 		bool get_isFly() const { return isFly; }
@@ -150,22 +150,30 @@ class Map
 						map[j][i] = obj.kind;
 		}
 		
-		void scroll_map(float dx, GameObject*& background_elems, int background_elems_count)
+		void scroll_map(float dx, GameObject& player, GameObject*& background_elems, int background_elems_count)
 		{
+			player.set_x(player.x - dx);
 			for (int i = 0; i < background_elems_count; i++)
-				background_elems[i].set_x(background_elems[i].x + dx);	
+				if (player.check_collision(background_elems[i]))
+				{
+					player.set_x(player.x + dx);
+					return;
+				}
+			player.set_x(player.x + dx);
+			for (int i = 0; i < background_elems_count; i++)
+				background_elems[i].set_x(background_elems[i].x + dx);
 		}
 		
-		void forward(GameObject*& background_elems, int background_elems_count)
+		void forward(GameObject& player, GameObject*& background_elems, int background_elems_count)
 		{
 			if (GetKeyState('A') < 0)
-				scroll_map(1, background_elems, background_elems_count);
+				scroll_map(1, player, background_elems, background_elems_count);
 		}
 		
-		void back(GameObject*& background_elems, int background_elems_count)
+		void back(GameObject& player, GameObject*& background_elems, int background_elems_count)
 		{
 			if (GetKeyState('D') < 0)
-				scroll_map(-1, background_elems, background_elems_count);
+				scroll_map(-1, player, background_elems, background_elems_count);
 		}
 };
 
@@ -234,8 +242,8 @@ int main()
 	{
 		map.clear_map();
 		player.jump();
-		map.forward(background_elems, background_elems_count);
-		map.back(background_elems, background_elems_count);
+		map.forward(player, background_elems, background_elems_count);
+		map.back(player, background_elems, background_elems_count);
 		player.vertical_move_object(background_elems, background_elems_count);
 		for (int i = 0; i < background_elems_count; i++)
 			map.add_object_on_map(background_elems[i]);	
