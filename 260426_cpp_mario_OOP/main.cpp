@@ -48,10 +48,7 @@ class GameObject
 		float get_width() const { return width; }
 		char get_kind() const { return kind; }
 		
-		void set_x(float new_x)
-		{
-			x = new_x;
-		}
+		void set_x(float new_x){ x = new_x; }
 };
 
 class MovingObject: public GameObject
@@ -69,7 +66,7 @@ class MovingObject: public GameObject
 			horizontal_speed = 0.2;
 		}
 		
-		void vertical_move_object(GameObject*& background_elems, int background_elems_count)
+		bool vertical_move_object(GameObject*& background_elems, int background_elems_count)
 		{
 			isFly = true;
 			vertical_speed += 0.05;
@@ -81,8 +78,12 @@ class MovingObject: public GameObject
 					y -= vertical_speed;
 					vertical_speed = 0;
 					isFly = false;
+					
+					if (background_elems[i].get_kind() == '+') return true;
 				}
 			}
+			return false;
+			
 		}
 
 		float get_vertical_speed() const { return vertical_speed; }
@@ -97,12 +98,6 @@ class Player: public MovingObject
 		{
 			if (!isFly && GetKeyState(VK_SPACE) < 0) 
 				 vertical_speed = -1;
-		}
-		
-		void death()
-		{
-			system("color 4F");
-			Sleep(500);
 		}
 };
 
@@ -175,10 +170,16 @@ class Map
 			if (GetKeyState('D') < 0)
 				scroll_map(-1, player, background_elems, background_elems_count);
 		}
+		
+		float get_MAP_HEIGHT() const { return MAP_HEIGHT; }
 };
 
 class Level
 {
+	private:
+		int current_level = 1;
+		int max_level = 2;
+		
 	public:
 		void add_new_background_elem(GameObject*& background_elems, int& background_elems_count, float x, float y, float height, float width, char kind)
 		{
@@ -198,7 +199,7 @@ class Level
 			background_elems_count = 0;
 		}
 		
-		void create_level(int current_level, GameObject& player, GameObject*& background_elems, int& background_elems_count)
+		void create_level(GameObject& player, GameObject*& background_elems, int& background_elems_count)
 		{
 			system("color 9F");
 			
@@ -224,7 +225,34 @@ class Level
 				add_new_background_elem(background_elems, background_elems_count, 85, 5, 10, 3, '-');
 				add_new_background_elem(background_elems, background_elems_count, 210, 15, 10, 10, '+');
 			}
+			
+			if (current_level == 2)
+			{
+				add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');
+				add_new_background_elem(background_elems, background_elems_count, 60, 15, 40, 10, '+');
+			}
 		}
+		
+		void next_level(GameObject& player, GameObject*& background_elems, int& background_elems_count)
+		{
+			current_level++;
+			if (current_level > max_level)
+				current_level = 1;
+			
+			system("color 2F");
+			Sleep(500);
+			create_level(player, background_elems, background_elems_count);
+		}
+		
+		void restart_level(GameObject& player, GameObject*& background_elems, int& background_elems_count)
+		{
+			system("color 4F");
+			Sleep(500);
+			create_level(player, background_elems, background_elems_count);
+		}
+		
+		float get_level_num() const { return current_level; }
+		void set_level_num(float new_num){ current_level = new_num; }
 };
 
 int main()
@@ -235,8 +263,9 @@ int main()
 	int background_elems_count = 0;
 	Level level_design;
 	Map map;
+	int level_num = 1;
 
-	level_design.create_level(1, player, background_elems, background_elems_count);
+	level_design.create_level(player, background_elems, background_elems_count);
 	
 	do
 	{
@@ -244,7 +273,8 @@ int main()
 		player.jump();
 		map.forward(player, background_elems, background_elems_count);
 		map.back(player, background_elems, background_elems_count);
-		player.vertical_move_object(background_elems, background_elems_count);
+		if (player.get_y() > map.get_MAP_HEIGHT()) level_design.restart_level(player, background_elems, background_elems_count);
+		if (player.vertical_move_object(background_elems, background_elems_count)) level_design.next_level(player, background_elems, background_elems_count);
 		for (int i = 0; i < background_elems_count; i++)
 			map.add_object_on_map(background_elems[i]);	
 		map.add_object_on_map(player);
@@ -253,6 +283,9 @@ int main()
 		Sleep(10);
 	} 
 	while (GetKeyState(VK_ESCAPE) >= 0);
+	
+	delete[] background_elems;
+	background_elems = nullptr;
 	
 	return 0;
 }
