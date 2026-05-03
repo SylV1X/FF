@@ -326,7 +326,7 @@ class Level
 {
 	private:
 		int current_level = 1;
-		int max_level = 2;
+		int max_level = 3;
 		
 	public:		
 		void create_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count, int& score)
@@ -419,54 +419,101 @@ class Level
 		void set_level_num(float new_num){ current_level = new_num; }
 };
 
-int main()
-
+class Game
 {
-	Player player;
-	GameObject* background_elems = nullptr;
-	int background_elems_count = 0;	
-	Sprite* sprites = nullptr;
-	int sprites_count = 0;
-	Level level_design;
-	Map map;
-	int level_num = 1;
-	int score = 0;
-
-	level_design.create_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
-	
-	do
-	{
-		map.clear_map();
-		player.jump();
-		if (GetKeyState('A') < 0) map.scroll_map(1, player, background_elems, background_elems_count, sprites, sprites_count);
-		if (GetKeyState('D') < 0) map.scroll_map(-1, player, background_elems, background_elems_count, sprites, sprites_count);
-		if (player.get_y() > map.get_MAP_HEIGHT()) level_design.restart_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
-		if (player.vertical_move_object(background_elems, background_elems_count, sprites, sprites_count)) level_design.next_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
-		if (player.player_collision_model(sprites, sprites_count, score)) level_design.restart_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
-		for (int i = 0; i < background_elems_count; i++)
-			map.add_object_on_map(background_elems[i]);
-		for (int i = 0; i < sprites_count; i++)
-		{
-			sprites[i].horizontal_move_object(sprites[i], background_elems, background_elems_count);
-			bool move = sprites[i].vertical_move_object(background_elems, background_elems_count);
-			map.add_object_on_map(sprites[i]);
-		}		
-		map.add_object_on_map(player);
-		map.show_score(score);
-		map.show_map();
+	private:
+		GameObject* background_elems;
+		Sprite* sprites;
+		Player player;
+		Level level;
 		
-		Sleep(10);
-	} 
-	while (GetKeyState(VK_ESCAPE) >= 0);
-	
-	delete[] background_elems;
-	background_elems = nullptr;
-	delete[] sprites;
-	sprites = nullptr;
-	
+		Map map;
+		
+		int sprites_count;
+		int background_elems_count;	
+		
+		int level_num;
+		int score;
+		
+		void player_position()
+		{
+			player.jump();
+			
+			if (GetKeyState('A') < 0) map.scroll_map(1, player, background_elems, background_elems_count, sprites, sprites_count);
+			
+			if (GetKeyState('D') < 0) map.scroll_map(-1, player, background_elems, background_elems_count, sprites, sprites_count);
+			
+			if (player.vertical_move_object(background_elems, background_elems_count, sprites, sprites_count)) level.next_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+		}
+		
+		void death_check()
+		{
+		if (player.get_y() > map.get_MAP_HEIGHT()) level.restart_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+		
+		if (player.player_collision_model(sprites, sprites_count, score)) level.restart_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+		}
+		
+		void sprites_position(Sprite& sprite)
+		{
+			sprite.horizontal_move_object(sprite, background_elems, background_elems_count);
+			
+			bool move = sprite.vertical_move_object(background_elems, background_elems_count);
+		}
+		
+		void rendering()
+		{	
+			map.clear_map();
+			
+			for (int i = 0; i < background_elems_count; i++)
+				map.add_object_on_map(background_elems[i]);
+			for (int i = 0; i < sprites_count; i++)
+			{
+				sprites_position(sprites[i]);
+				map.add_object_on_map(sprites[i]);
+			}	
+			
+			map.add_object_on_map(player);
+			map.show_score(score);
+			map.show_map();
+		}
+	public:
+		Game()
+		{
+			background_elems = nullptr;
+			sprites = nullptr;
+			background_elems_count = 0;
+			sprites_count = 0;
+			score = 0;
+			
+			level.create_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+		}
+		~Game()
+		{
+			delete[] background_elems;
+			background_elems = nullptr;
+			delete[] sprites;
+			sprites = nullptr;
+		}
+		void run()
+		{
+			do
+			{
+				player_position();
+				death_check();
+				rendering();
+				Sleep(10);
+			}
+			while (GetKeyState(VK_ESCAPE) >= 0);
+		}
+};
+
+
+int main()
+{
+	Game game;
+	game.run();
 	return 0;
 }
 
 // План:
-// 3. Score
 // 4. class Game(or Level refactor)
