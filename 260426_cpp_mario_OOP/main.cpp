@@ -41,6 +41,23 @@ class GameObject
 			&& (y +  height) > obj.y 
 			&& y < (obj.y + obj.height);
 		}
+		void add_new_background_elem(GameObject*& background_elems, int& background_elems_count, float x, float y, float height, float width, char kind)
+		{
+			GameObject* background_elems_update = new GameObject[background_elems_count + 1];
+			for (int i = 0; i < background_elems_count; i++)
+				background_elems_update[i] = background_elems[i];
+			delete[] background_elems;
+			background_elems = background_elems_update;
+			background_elems[background_elems_count].init_object(x, y, height, width, kind);
+			background_elems_count++;
+		}
+		
+		void delete_background_elem(GameObject*& background_elems, int& background_elems_count)
+		{
+			delete[] background_elems;
+			background_elems = nullptr;
+			background_elems_count = 0;
+		}
 		
 		float get_x() const { return x; }
 		float get_y() const { return y; }
@@ -48,7 +65,8 @@ class GameObject
 		float get_width() const { return width; }
 		char get_kind() const { return kind; }
 		
-		void set_x(float new_x){ x = new_x; }
+		void set_x(float new_x){ x = new_x; }		
+		void set_kind(float new_kind){ kind = new_kind; }
 };
 
 class MovingObject: public GameObject
@@ -71,6 +89,8 @@ class MovingObject: public GameObject
 		float get_vertical_speed() const { return vertical_speed; }
 		float get_horizontal_speed() const { return horizontal_speed; }
 		bool get_isFly() const { return isFly; }
+		
+		void set_vertical_speed(float new_vertical_speed){ vertical_speed = new_vertical_speed; }
 };
 
 class Sprite: public MovingObject
@@ -118,6 +138,24 @@ class Sprite: public MovingObject
 			}
 		}
 		
+		void add_new_sprite(Sprite*& sprites, int& sprites_count, float x, float y, float height, float width, char kind)
+		{
+			Sprite* sprites_update = new Sprite[sprites_count + 1];
+			for (int i = 0; i < sprites_count; i++)
+				sprites_update[i] = sprites[i];
+			delete[] sprites;
+			sprites = sprites_update;
+			sprites[sprites_count].init_object(x, y, height, width, kind);
+			sprites_count++;
+		}
+		
+		void delete_sprites(Sprite*& sprites, int& sprites_count)
+		{
+			delete[] sprites;
+			sprites = nullptr;
+			sprites_count = 0;
+		}		
+		
 		void remove_sprite(int index, Sprite*& sprites, int& sprites_count)
 		{
 			sprites_count--;
@@ -138,6 +176,7 @@ class Sprite: public MovingObject
 			}
 		}
 
+
 };
 
 class Player: public MovingObject
@@ -149,7 +188,7 @@ class Player: public MovingObject
 				 vertical_speed = -1;
 		}
 		
-		bool vertical_move_object(GameObject*& background_elems, int background_elems_count)
+		bool vertical_move_object(GameObject*& background_elems, int background_elems_count, Sprite*& sprites, int& sprites_count)
 		{
 			isFly = true;
 			vertical_speed += 0.05;
@@ -159,9 +198,17 @@ class Player: public MovingObject
 				if (check_collision(background_elems[i]))
 				{
 					if (vertical_speed > 0) isFly = false;
+										
+					if ((background_elems[i].get_kind() == '?') && (vertical_speed < 0))
+					{
+						background_elems[i].set_kind('-');
+						sprites->add_new_sprite(sprites, sprites_count, background_elems[i].get_x(), background_elems[i].get_y() - 3, 3, 2, '$');
+						sprites[sprites_count - 1].set_vertical_speed(sprites[sprites_count - 1].get_vertical_speed() - 0.7);
+					}
+					
 					y -= vertical_speed;
 					vertical_speed = 0;
-					
+	
 					if (background_elems[i].get_kind() == '+') return true; 
 					// Внук имеет доступ к полю protected Деда только для this, для других объектов - нет, поэтому использовать геттер.
 				}
@@ -268,52 +315,16 @@ class Level
 		int current_level = 1;
 		int max_level = 2;
 		
-	public:
-		void add_new_background_elem(GameObject*& background_elems, int& background_elems_count, float x, float y, float height, float width, char kind)
-		{
-			GameObject* background_elems_update = new GameObject[background_elems_count + 1];
-			for (int i = 0; i < background_elems_count; i++)
-				background_elems_update[i] = background_elems[i];
-			delete[] background_elems;
-			background_elems = background_elems_update;
-			background_elems[background_elems_count].init_object(x, y, height, width, kind);
-			background_elems_count++;
-		}
-		
-		void delete_background_elem(GameObject*& background_elems, int& background_elems_count)
-		{
-			delete[] background_elems;
-			background_elems = nullptr;
-			background_elems_count = 0;
-		}
-				
-		void add_new_sprite(Sprite*& sprites, int& sprites_count, float x, float y, float height, float width, char kind)
-		{
-			Sprite* sprites_update = new Sprite[sprites_count + 1];
-			for (int i = 0; i < sprites_count; i++)
-				sprites_update[i] = sprites[i];
-			delete[] sprites;
-			sprites = sprites_update;
-			sprites[sprites_count].init_object(x, y, height, width, kind);
-			sprites_count++;
-		}
-		
-		void delete_enemy(Sprite*& sprites, int& sprites_count)
-		{
-			delete[] sprites;
-			sprites = nullptr;
-			sprites_count = 0;
-		}
-		
+	public:		
 		void create_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count)
 		{
 			system("color 9F");
 			
-			delete_background_elem(background_elems, background_elems_count);
+			background_elems->delete_background_elem(background_elems, background_elems_count);
 			background_elems = nullptr;
 			background_elems_count = 0;
 			
-			delete_enemy(sprites, sprites_count);
+			sprites->delete_sprites(sprites, sprites_count);
 			sprites = nullptr;
 			sprites_count = 0;
 
@@ -321,54 +332,54 @@ class Level
 			
 			if (current_level == 1)
 			{
-				add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');		
-				add_new_background_elem(background_elems, background_elems_count, 60, 15, 40, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 100, 20, 20, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 120, 15, 10, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 150, 20, 40, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 30, 10, 5, 3, '?');
-				add_new_background_elem(background_elems, background_elems_count, 50, 10, 5, 3, '?');
-				add_new_background_elem(background_elems, background_elems_count, 70, 5, 5, 3, '?');
-				add_new_background_elem(background_elems, background_elems_count, 80, 5, 5, 3, '?');
-				add_new_background_elem(background_elems, background_elems_count, 60, 5, 10, 3, '-');
-				add_new_background_elem(background_elems, background_elems_count, 75, 5, 5, 3, '-');
-				add_new_background_elem(background_elems, background_elems_count, 85, 5, 10, 3, '-');
-				add_new_background_elem(background_elems, background_elems_count, 210, 15, 10, 10, '+');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');		
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 60, 15, 40, 10, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 100, 20, 20, 5, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 120, 15, 10, 10, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 150, 20, 40, 5, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 30, 10, 5, 3, '?');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 50, 10, 5, 3, '?');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 70, 5, 5, 3, '?');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 80, 5, 5, 3, '?');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 60, 5, 10, 3, '-');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 75, 5, 5, 3, '-');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 85, 5, 10, 3, '-');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 210, 15, 10, 10, '+');
 				
-				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');	
+				sprites->add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');	
 			}
 			
 			if (current_level == 2)
 			{
-				add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 60, 15, 10, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 80, 20, 20, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 120, 15, 10, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 150, 20, 40, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 210, 15, 10, 10, '+');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 60, 15, 10, 10, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 80, 20, 20, 5, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 120, 15, 10, 10, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 150, 20, 40, 5, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 210, 15, 10, 10, '+');
 				
-				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 65, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 120, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 160, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 175, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 65, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 120, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 160, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 175, 10, 3, 2, 'o');
 			}
 			
 			if (current_level == 3)
 			{
-				add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 80, 20, 15, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 120, 15, 15, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 160, 10, 15, 15, '+');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 80, 20, 15, 5, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 120, 15, 15, 10, '#');
+				background_elems->add_new_background_elem(background_elems, background_elems_count, 160, 10, 15, 15, '+');
 				
-				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 50, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 90, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 120, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 130, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 50, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 90, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 120, 10, 3, 2, 'o');
+				sprites->add_new_sprite(sprites, sprites_count, 130, 10, 3, 2, 'o');
 			}
 		}
 		
@@ -415,7 +426,7 @@ int main()
 		if (GetKeyState('A') < 0) map.scroll_map(1, player, background_elems, background_elems_count, sprites, sprites_count);
 		if (GetKeyState('D') < 0) map.scroll_map(-1, player, background_elems, background_elems_count, sprites, sprites_count);
 		if (player.get_y() > map.get_MAP_HEIGHT()) level_design.restart_level(player, background_elems, background_elems_count, sprites, sprites_count);
-		if (player.vertical_move_object(background_elems, background_elems_count)) level_design.next_level(player, background_elems, background_elems_count, sprites, sprites_count);
+		if (player.vertical_move_object(background_elems, background_elems_count, sprites, sprites_count)) level_design.next_level(player, background_elems, background_elems_count, sprites, sprites_count);
 		if (player.player_collision_model(sprites, sprites_count)) level_design.restart_level(player, background_elems, background_elems_count, sprites, sprites_count);
 		for (int i = 0; i < background_elems_count; i++)
 			map.add_object_on_map(background_elems[i]);
@@ -440,4 +451,8 @@ int main()
 	return 0;
 }
 
-// Осталось: Враги, Взаимодействие врагов с персонажем, Монетки, Счет.
+// План:
+// 1. class Object_Manager
+// 2. Token
+// 3. Score
+// 4. class Game(or Level refactor)
