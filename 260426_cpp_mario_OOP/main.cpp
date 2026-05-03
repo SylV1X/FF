@@ -1,6 +1,8 @@
 #include <iostream>
 #include <windows.h>
-#include <math.h>
+#include <cmath>
+#include <cstdlib>
+#include <sstream>
 
 class GameObject
 {
@@ -216,7 +218,7 @@ class Player: public MovingObject
 			return false;
 		}
 		
-		bool player_collision_model(Sprite*& sprites, int& sprites_count)
+		bool player_collision_model(Sprite*& sprites, int& sprites_count, int& score)
 		{
 			for (int i = 0; i < sprites_count; i++)
 				if (check_collision(sprites[i]))
@@ -227,6 +229,7 @@ class Player: public MovingObject
 							&& vertical_speed > 0
 							&& y + height < sprites[i].get_y() + sprites[i].get_height() * 0.5)
 						{
+							score += 50;
 							sprites[0].remove_sprite(i, sprites, sprites_count);
 							i--;
 							continue;
@@ -237,6 +240,7 @@ class Player: public MovingObject
 					
 					if (sprites[i].get_kind() == '$')
 					{
+						score += 100;
 						sprites[0].remove_sprite(i, sprites, sprites_count);
 						i--;
 						continue;
@@ -306,6 +310,15 @@ class Map
 				sprites[i].set_x(sprites[i].x + dx);
 		}
 		
+		void show_score(int score)
+		{
+			std::ostringstream ss;
+			ss << "Score: " << score;
+			std::string text = ss.str();
+			for (int i = 0; i < text.length(); i++)
+				map[1][i + 5] = text[i];
+		}
+		
 		float get_MAP_HEIGHT() const { return MAP_HEIGHT; }
 };
 
@@ -316,7 +329,7 @@ class Level
 		int max_level = 2;
 		
 	public:		
-		void create_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count)
+		void create_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count, int& score)
 		{
 			system("color 9F");
 			
@@ -329,6 +342,7 @@ class Level
 			sprites_count = 0;
 
 			player.init_object(39, 10, 3, 3, '@');
+			score = 0;
 			
 			if (current_level == 1)
 			{
@@ -383,7 +397,7 @@ class Level
 			}
 		}
 		
-		void next_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count)
+		void next_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count, int& score)
 		{
 			current_level++;
 			if (current_level > max_level)
@@ -391,14 +405,14 @@ class Level
 			
 			system("color 2F");
 			Sleep(500);
-			create_level(player, background_elems, background_elems_count, sprites, sprites_count);
+			create_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
 		}
 		
-		void restart_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count)
+		void restart_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count, int& score)
 		{
 			system("color 4F");
 			Sleep(500);
-			create_level(player, background_elems, background_elems_count, sprites, sprites_count);
+			create_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
 		}
 		
 		float get_level_num() const { return current_level; }
@@ -416,8 +430,9 @@ int main()
 	Level level_design;
 	Map map;
 	int level_num = 1;
+	int score = 0;
 
-	level_design.create_level(player, background_elems, background_elems_count, sprites, sprites_count);
+	level_design.create_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
 	
 	do
 	{
@@ -425,9 +440,9 @@ int main()
 		player.jump();
 		if (GetKeyState('A') < 0) map.scroll_map(1, player, background_elems, background_elems_count, sprites, sprites_count);
 		if (GetKeyState('D') < 0) map.scroll_map(-1, player, background_elems, background_elems_count, sprites, sprites_count);
-		if (player.get_y() > map.get_MAP_HEIGHT()) level_design.restart_level(player, background_elems, background_elems_count, sprites, sprites_count);
-		if (player.vertical_move_object(background_elems, background_elems_count, sprites, sprites_count)) level_design.next_level(player, background_elems, background_elems_count, sprites, sprites_count);
-		if (player.player_collision_model(sprites, sprites_count)) level_design.restart_level(player, background_elems, background_elems_count, sprites, sprites_count);
+		if (player.get_y() > map.get_MAP_HEIGHT()) level_design.restart_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+		if (player.vertical_move_object(background_elems, background_elems_count, sprites, sprites_count)) level_design.next_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+		if (player.player_collision_model(sprites, sprites_count, score)) level_design.restart_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
 		for (int i = 0; i < background_elems_count; i++)
 			map.add_object_on_map(background_elems[i]);
 		for (int i = 0; i < sprites_count; i++)
@@ -437,6 +452,7 @@ int main()
 			map.add_object_on_map(sprites[i]);
 		}		
 		map.add_object_on_map(player);
+		map.show_score(score);
 		map.show_map();
 		
 		Sleep(10);
@@ -452,7 +468,5 @@ int main()
 }
 
 // План:
-// 1. class Object_Manager
-// 2. Token
 // 3. Score
 // 4. class Game(or Level refactor)
