@@ -189,12 +189,23 @@ int main()
 	{
 		player.jump();
 		
-		if (GetKeyState('A') < 0) map.scroll_map(1, player, blocks, blocks_count, sprites, sprites_count);
+		if (GetKeyState('A') < 0) 
+			map.scroll_map(1, player, blocks, blocks_count, sprites, sprites_count);
 		
-		if (GetKeyState('D') < 0) map.scroll_map(-1, player, blocks, blocks_count, sprites, sprites_count);
+		if (GetKeyState('D') < 0) 
+			map.scroll_map(-1, player, blocks, blocks_count, sprites, sprites_count);
 		
-		if (player.vertical_move_object(level, blocks, blocks_count, sprites, sprites_count)) 
-			level.next_level(player, blocks, blocks_count, sprites, sprites_count, score);
+		if (player.vertical_move_object(
+				level, 
+				blocks, blocks_count, 
+				sprites, sprites_count)
+			) 
+			level.next_level(
+					player, 
+					blocks, blocks_count, 
+					sprites, sprites_count, 
+					score
+				);
 	
 		for (int i = 0; i < sprites_count; i++)
 		{
@@ -203,10 +214,20 @@ int main()
 		}
 
 		if (player.get_y() > map.get_MAP_HEIGHT()) 
-			level.restart_level(player, blocks, blocks_count, sprites, sprites_count, score);
+			level.restart_level(
+					player, 
+					blocks, blocks_count, 
+					sprites, sprites_count, 
+					score
+				);
 		
 		if (player.player_collision_model(level, sprites, sprites_count, score)) 
-			level.restart_level(player, blocks, blocks_count, sprites, sprites_count, score);
+			level.restart_level(
+					player, 
+					blocks, blocks_count, 
+					sprites, sprites_count, 
+					score
+				);
 		
 		map.clear_map();
 		
