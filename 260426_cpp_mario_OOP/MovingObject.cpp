@@ -1,10 +1,12 @@
 #include "MovingObject.hpp"
 
-float ssY::MovingObject::get_vertical_speed() const { return vertical_speed; }
-float ssY::MovingObject::get_horizontal_speed() const { return horizontal_speed; }
-bool ssY::MovingObject::get_is_fly() const { return is_fly; }
+using ssY::MovingObject;
 
-void ssY::MovingObject::init_object(
+float MovingObject::get_vertical_speed() const { return vertical_speed; }
+float MovingObject::get_horizontal_speed() const { return horizontal_speed; }
+bool MovingObject::get_is_fly() const { return is_fly; }
+
+void MovingObject::init_object(
 	float init_x, float init_y, 
 	float init_width, float init_height, 
 	char init_kind
@@ -18,5 +20,5 @@ void ssY::MovingObject::init_object(
 	horizontal_speed = 0.2;
 }
 
-void ssY::MovingObject::set_vertical_speed(float new_vertical_speed)
+void MovingObject::set_vertical_speed(float new_vertical_speed)
 	{ vertical_speed = new_vertical_speed; }

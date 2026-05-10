@@ -1,7 +1,7 @@
-#ifndef SPRITE_HPP
-#define SPRITE_HPP
+#pragma once
 
 #include "MovingObject.hpp"
+#include "Section.hpp"
 
 namespace ssY {
 	class Sprite: public MovingObject
@@ -14,5 +14,3 @@ namespace ssY {
 			bool vertical_move_object(GameObject*& blocks, int blocks_count);
 	};
 }
-
-#endif

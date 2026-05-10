@@ -1,5 +1,4 @@
-#ifndef GAMEOBJECT_HPP
-#define GAMEOBJECT_HPP
+#pragma once
 
 namespace ssY {
 	class GameObject
@@ -31,5 +30,3 @@ namespace ssY {
 			void set_x(float new_x);
 	};
 }
-
-#endif

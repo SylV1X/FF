@@ -1,6 +1,8 @@
 #include "Sprite.hpp"
 
-void ssY::Sprite::horizontal_move_object(
+using ssY::Sprite;
+
+void Sprite::horizontal_move_object(
 	Sprite& obj, 
 	GameObject*& blocks, int blocks_count
 ) {
@@ -26,7 +28,7 @@ void ssY::Sprite::horizontal_move_object(
 	}
 }
 
-bool ssY::Sprite::vertical_move_object(GameObject*& blocks, int blocks_count) 
+bool Sprite::vertical_move_object(GameObject*& blocks, int blocks_count) 
 {
 	is_fly = true;
 	vertical_speed += 0.05;

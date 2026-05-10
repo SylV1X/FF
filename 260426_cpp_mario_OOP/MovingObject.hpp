@@ -1,5 +1,4 @@
-#ifndef MOVINGOBJECT_HPP
-#define MOVINGOBJECT_HPP
+#pragma once
 
 #include "GameObject.hpp"
 
@@ -25,5 +24,3 @@ namespace ssY {
 			void set_vertical_speed(float new_vertical_speed);
 	};
 }
-
-#endif
