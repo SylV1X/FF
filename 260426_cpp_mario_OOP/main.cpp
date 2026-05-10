@@ -5,6 +5,8 @@
 #include <windows.h>
 
 #include "GameObject.hpp"
+#include "MovingObject.hpp"
+#include "Sprite.hpp"
 
 using namespace ssY;
 
@@ -18,36 +20,7 @@ enum Section : char {
 	PLATFORM = '#'
 };
 
-class MovingObject: public GameObject
-{
-	protected:
-		bool is_fly;
-		float horizontal_speed;
-		float vertical_speed;
 
-	public:
-		bool get_is_fly() const;
-		float get_horizontal_speed() const;
-		float get_vertical_speed() const;
-		
-		void init_object(
-			float init_x, float init_y, 
-			float init_width, float init_height, 
-			char init_kind
-		);
-	
-		void set_vertical_speed(float new_vertical_speed);
-};
-
-class Sprite: public MovingObject
-{
-	public:
-		void horizontal_move_object(
-			Sprite& obj, 
-			GameObject*& blocks, int blocks_count
-		);	
-		bool vertical_move_object(GameObject*& blocks, int blocks_count);
-};
 
 class Map
 {
@@ -224,77 +197,6 @@ int main()
 	sprites = nullptr;
 
 	return 0;
-}
-
-// --------------------------------------------------------------------------------------
-// MovingObject
-// --------------------------------------------------------------------------------------
-float MovingObject::get_vertical_speed() const { return vertical_speed; }
-float MovingObject::get_horizontal_speed() const { return horizontal_speed; }
-bool MovingObject::get_is_fly() const { return is_fly; }
-
-void MovingObject::init_object(
-	float init_x, float init_y, 
-	float init_width, float init_height, 
-	char init_kind
-) {
-	GameObject::init_object(
-		init_x, init_y, 
-		init_width, init_height, 
-		init_kind
-	);
-	vertical_speed = 0;
-	horizontal_speed = 0.2;
-}
-
-void MovingObject::set_vertical_speed(float new_vertical_speed)
-	{ vertical_speed = new_vertical_speed; }
-
-// --------------------------------------------------------------------------------------
-// Sprite
-// --------------------------------------------------------------------------------------
-void Sprite::horizontal_move_object(
-	Sprite& obj, 
-	GameObject*& blocks, int blocks_count
-) {
-	obj.set_x(obj.get_x() + horizontal_speed);
-	
-	for (int i = 0; i < blocks_count; i++)
-		if (check_collision(blocks[i]))
-		{
-			obj.set_x(obj.get_x() - horizontal_speed);
-			horizontal_speed = -horizontal_speed;
-			return;
-		}
-	
-	if (obj.get_kind() == ENEMY)
-	{
-		Sprite tmp = obj;
-		tmp.vertical_move_object(blocks, blocks_count);
-		if (tmp.get_is_fly())
-		{
-			obj.set_x(obj.get_x() - horizontal_speed);
-			horizontal_speed = -horizontal_speed;	
-		}
-	}
-}
-
-bool Sprite::vertical_move_object(GameObject*& blocks, int blocks_count) 
-{
-	is_fly = true;
-	vertical_speed += 0.05;
-	GameObject::set_object_pos(x, y + vertical_speed);
-	for (int i = 0; i < blocks_count; i++)
-	{
-		if (check_collision(blocks[i]))
-		{
-			if (vertical_speed > 0) is_fly = false;
-			y -= vertical_speed;
-			vertical_speed = 0;
-			is_fly = false;
-		}
-	}
-	return false;
 }
 
 // --------------------------------------------------------------------------------------
