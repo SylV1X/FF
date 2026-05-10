@@ -1,125 +1,75 @@
-#include <iostream>
-#include <windows.h>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <sstream>
+#include <windows.h>
+
+enum Section : char {
+	BOX = '-',
+	COIN = '$',
+	FINISH = '+',
+	FULL_BOX = '?',
+	ENEMY = 'o',
+	MARIO = '@',
+	PLATFORM = '#'
+};
 
 class GameObject
 {
 	protected:
+		friend class Map;
 		float x, y;
 		float height, width;
 		char kind;
-		friend class Map;
 
 	public:		
-		GameObject() // for derived
-		{
-			x = 0;
-			y = 0;
-			height = 0;
-			width = 0;
-			kind = ' ';
-		}
+		GameObject();
 		
-		void set_object_pos(float obj_pos_x, float obj_pos_y)
-		{
-			x = obj_pos_x;
-			y = obj_pos_y;
-		}
+		bool check_collision(const GameObject& obj);
 		
-		void init_object(float init_x, float init_y, float init_width, float init_height, char init_kind)
-		{
-			set_object_pos(init_x, init_y);
-			width = init_width;
-			height = init_height;
-			kind = init_kind;
-		}
-
-		bool check_collision(const GameObject& obj)
-		{
-			return (x +  width) > obj.x
-			&& x < (obj.x + obj.width)
-			&& (y +  height) > obj.y 
-			&& y < (obj.y + obj.height);
-		}
+		float get_height() const;
+		char get_kind() const;
+		float get_width() const;
+		float get_x() const;
+		float get_y() const;
 		
-		float get_x() const { return x; }
-		float get_y() const { return y; }
-		float get_height() const { return height; }
-		float get_width() const { return width; }
-		char get_kind() const { return kind; }
+		void init_object(
+			float init_x, float init_y, 
+			float init_width, float init_height, 
+			char init_kind
+		);
 		
-		void set_x(float new_x){ x = new_x; }		
-		void set_kind(char new_kind){ kind = new_kind; }
+		void set_kind(char new_kind);
+		void set_object_pos(float obj_pos_x, float obj_pos_y);
+		void set_x(float new_x);
 };
 
 class MovingObject: public GameObject
 {
 	protected:
-		float vertical_speed;
+		bool is_fly;
 		float horizontal_speed;
-		bool isFly;
-		
-	public:
-		void init_object(float init_x, float init_y, float init_width, float init_height, char init_kind)
-		{
-			GameObject::init_object(init_x, init_y, init_width, init_height, init_kind);
-			vertical_speed = 0;
-			horizontal_speed = 0.2;
-		}
+		float vertical_speed;
 
-		float get_vertical_speed() const { return vertical_speed; }
-		float get_horizontal_speed() const { return horizontal_speed; }
-		bool get_isFly() const { return isFly; }
+	public:
+		bool get_is_fly() const;
+		float get_horizontal_speed() const;
+		float get_vertical_speed() const;
 		
-		void set_vertical_speed(float new_vertical_speed){ vertical_speed = new_vertical_speed; }
+		void init_object(
+			float init_x, float init_y, 
+			float init_width, float init_height, 
+			char init_kind
+		);
+	
+		void set_vertical_speed(float new_vertical_speed);
 };
 
 class Sprite: public MovingObject
 {
 	public:
-		bool vertical_move_object(GameObject*& background_elems, int background_elems_count) 
-		{
-			isFly = true;
-			vertical_speed += 0.05;
-			GameObject::set_object_pos(x, y + vertical_speed);
-			for (int i = 0; i < background_elems_count; i++)
-			{
-				if (check_collision(background_elems[i]))
-				{
-					if (vertical_speed > 0) isFly = false;
-					y -= vertical_speed;
-					vertical_speed = 0;
-					isFly = false;
-				}
-			}
-			return false;
-		}
-		
-		void horizontal_move_object(Sprite& obj, GameObject*& background_elems, int background_elems_count)
-		{
-			obj.set_x(obj.get_x() + horizontal_speed);
-			
-			for (int i = 0; i < background_elems_count; i++)
-				if (check_collision(background_elems[i]))
-				{
-					obj.set_x(obj.get_x() - horizontal_speed);
-					horizontal_speed = -horizontal_speed;
-					return;
-				}
-			
-			if (obj.get_kind() == 'o')
-			{
-				Sprite tmp = obj;
-				tmp.vertical_move_object(background_elems, background_elems_count);
-				if (tmp.get_isFly())
-				{
-					obj.set_x(obj.get_x() - horizontal_speed);
-					horizontal_speed = -horizontal_speed;	
-				}
-			}
-		}
+		void horizontal_move_object(Sprite& obj, GameObject*& blocks, int blocks_count);	
+		bool vertical_move_object(GameObject*& blocks, int blocks_count);
 };
 
 class Map
@@ -166,18 +116,18 @@ class Map
 						map[j][i] = obj.kind;
 		}
 		
-		void scroll_map(float dx, GameObject& player, GameObject*& background_elems, int background_elems_count, Sprite*& sprites, int& sprites_count)
+		void scroll_map(float dx, GameObject& player, GameObject*& blocks, int blocks_count, Sprite*& sprites, int& sprites_count)
 		{
 			player.set_x(player.x - dx);
-			for (int i = 0; i < background_elems_count; i++)
-				if (player.check_collision(background_elems[i]))
+			for (int i = 0; i < blocks_count; i++)
+				if (player.check_collision(blocks[i]))
 				{
 					player.set_x(player.x + dx);
 					return;
 				}
 			player.set_x(player.x + dx);
-			for (int i = 0; i < background_elems_count; i++)
-				background_elems[i].set_x(background_elems[i].x + dx);
+			for (int i = 0; i < blocks_count; i++)
+				blocks[i].set_x(blocks[i].x + dx);
 			for (int i = 0; i < sprites_count; i++)
 				sprites[i].set_x(sprites[i].x + dx);
 		}
@@ -201,22 +151,22 @@ class Level
 		int max_level = 3;
 		
 	public:
-		void add_new_background_elem(GameObject*& background_elems, int& background_elems_count, float x, float y, float height, float width, char kind)
+		void add_new_block(GameObject*& blocks, int& blocks_count, float x, float y, float height, float width, char kind)
 		{
-			GameObject* background_elems_update = new GameObject[background_elems_count + 1];
-			for (int i = 0; i < background_elems_count; i++)
-				background_elems_update[i] = background_elems[i];
-			delete[] background_elems;
-			background_elems = background_elems_update;
-			background_elems[background_elems_count].init_object(x, y, height, width, kind);
-			background_elems_count++;
+			GameObject* blocks_update = new GameObject[blocks_count + 1];
+			for (int i = 0; i < blocks_count; i++)
+				blocks_update[i] = blocks[i];
+			delete[] blocks;
+			blocks = blocks_update;
+			blocks[blocks_count].init_object(x, y, height, width, kind);
+			blocks_count++;
 		}
 		
-		void delete_background_elems(GameObject*& background_elems, int& background_elems_count)
+		void delete_blocks(GameObject*& blocks, int& blocks_count)
 		{
-			delete[] background_elems;
-			background_elems = nullptr;
-			background_elems_count = 0;
+			delete[] blocks;
+			blocks = nullptr;
+			blocks_count = 0;
 		}
 		
 		void add_new_sprite(Sprite*& sprites, int& sprites_count, float x, float y, float height, float width, char kind)
@@ -257,75 +207,75 @@ class Level
 			}
 		}
 		
-		void create_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count, int& score)
+		void create_level(GameObject& player, GameObject*& blocks, int& blocks_count, Sprite*& sprites, int& sprites_count, int& score)
 		{
 			system("color 9F");
 			
-			delete_background_elems(background_elems, background_elems_count);
-			background_elems = nullptr;
-			background_elems_count = 0;
+			delete_blocks(blocks, blocks_count);
+			blocks = nullptr;
+			blocks_count = 0;
 			
 			delete_sprites(sprites, sprites_count);
 			sprites = nullptr;
 			sprites_count = 0;
 
-			player.init_object(39, 10, 3, 3, '@');
+			player.init_object(39, 10, 3, 3, MARIO);
 			score = 0;
 			
 			if (current_level == 1)
 			{
-				add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');		
-				add_new_background_elem(background_elems, background_elems_count, 60, 15, 40, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 100, 20, 20, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 120, 15, 10, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 150, 20, 40, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 30, 10, 5, 3, '?');
-				add_new_background_elem(background_elems, background_elems_count, 50, 10, 5, 3, '?');
-				add_new_background_elem(background_elems, background_elems_count, 70, 5, 5, 3, '?');
-				add_new_background_elem(background_elems, background_elems_count, 80, 5, 5, 3, '?');
-				add_new_background_elem(background_elems, background_elems_count, 60, 5, 10, 3, '-');
-				add_new_background_elem(background_elems, background_elems_count, 75, 5, 5, 3, '-');
-				add_new_background_elem(background_elems, background_elems_count, 85, 5, 10, 3, '-');
-				add_new_background_elem(background_elems, background_elems_count, 210, 15, 10, 10, '+');
+				add_new_block(blocks, blocks_count, 20, 20, 40, 5, PLATFORM);		
+				add_new_block(blocks, blocks_count, 60, 15, 40, 10, PLATFORM);
+				add_new_block(blocks, blocks_count, 100, 20, 20, 5, PLATFORM);
+				add_new_block(blocks, blocks_count, 120, 15, 10, 10, PLATFORM);
+				add_new_block(blocks, blocks_count, 150, 20, 40, 5, PLATFORM);
+				add_new_block(blocks, blocks_count, 30, 10, 5, 3, FULL_BOX);
+				add_new_block(blocks, blocks_count, 50, 10, 5, 3, FULL_BOX);
+				add_new_block(blocks, blocks_count, 70, 5, 5, 3, FULL_BOX);
+				add_new_block(blocks, blocks_count, 80, 5, 5, 3, FULL_BOX);
+				add_new_block(blocks, blocks_count, 60, 5, 10, 3, BOX);
+				add_new_block(blocks, blocks_count, 75, 5, 5, 3, BOX);
+				add_new_block(blocks, blocks_count, 85, 5, 10, 3, BOX);
+				add_new_block(blocks, blocks_count, 210, 15, 10, 10, FINISH);
 				
-				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');	
+				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, ENEMY);	
 			}
 			
 			if (current_level == 2)
 			{
-				add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 60, 15, 10, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 80, 20, 20, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 120, 15, 10, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 150, 20, 40, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 210, 15, 10, 10, '+');
+				add_new_block(blocks, blocks_count, 20, 20, 40, 5, PLATFORM);
+				add_new_block(blocks, blocks_count, 60, 15, 10, 10, PLATFORM);
+				add_new_block(blocks, blocks_count, 80, 20, 20, 5, PLATFORM);
+				add_new_block(blocks, blocks_count, 120, 15, 10, 10, PLATFORM);
+				add_new_block(blocks, blocks_count, 150, 20, 40, 5, PLATFORM);
+				add_new_block(blocks, blocks_count, 210, 15, 10, 10, FINISH);
 				
-				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 65, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 120, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 160, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 175, 10, 3, 2, 'o');
+				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 65, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 120, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 160, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 175, 10, 3, 2, ENEMY);
 			}
 			
 			if (current_level == 3)
 			{
-				add_new_background_elem(background_elems, background_elems_count, 20, 20, 40, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 80, 20, 15, 5, '#');
-				add_new_background_elem(background_elems, background_elems_count, 120, 15, 15, 10, '#');
-				add_new_background_elem(background_elems, background_elems_count, 160, 10, 15, 15, '+');
+				add_new_block(blocks, blocks_count, 20, 20, 40, 5, PLATFORM);
+				add_new_block(blocks, blocks_count, 80, 20, 15, 5, PLATFORM);
+				add_new_block(blocks, blocks_count, 120, 15, 15, 10, PLATFORM);
+				add_new_block(blocks, blocks_count, 160, 10, 15, 15, FINISH);
 				
-				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 50, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 90, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 120, 10, 3, 2, 'o');
-				add_new_sprite(sprites, sprites_count, 130, 10, 3, 2, 'o');
+				add_new_sprite(sprites, sprites_count, 25, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 50, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 80, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 90, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 120, 10, 3, 2, ENEMY);
+				add_new_sprite(sprites, sprites_count, 130, 10, 3, 2, ENEMY);
 			}
 		}
 		
-		void next_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count, int& score)
+		void next_level(GameObject& player, GameObject*& blocks, int& blocks_count, Sprite*& sprites, int& sprites_count, int& score)
 		{
 			current_level++;
 			if (current_level > max_level)
@@ -333,14 +283,14 @@ class Level
 			
 			system("color 2F");
 			Sleep(500);
-			create_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+			create_level(player, blocks, blocks_count, sprites, sprites_count, score);
 		}
 		
-		void restart_level(GameObject& player, GameObject*& background_elems, int& background_elems_count, Sprite*& sprites, int& sprites_count, int& score)
+		void restart_level(GameObject& player, GameObject*& blocks, int& blocks_count, Sprite*& sprites, int& sprites_count, int& score)
 		{
 			system("color 4F");
 			Sleep(500);
-			create_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+			create_level(player, blocks, blocks_count, sprites, sprites_count, score);
 		}
 		
 		float get_level_num() const { return current_level; }
@@ -352,33 +302,32 @@ class Player: public MovingObject
 	public:
 		void jump()
 		{
-			if (!isFly && GetKeyState(VK_SPACE) < 0) 
+			if (!is_fly && GetKeyState(VK_SPACE) < 0) 
 				 vertical_speed = -1;
 		}
 		
-		bool vertical_move_object(Level& level, GameObject*& background_elems, int background_elems_count, Sprite*& sprites, int& sprites_count)
+		bool vertical_move_object(Level& level, GameObject*& blocks, int blocks_count, Sprite*& sprites, int& sprites_count)
 		{
-			isFly = true;
+			is_fly = true;
 			vertical_speed += 0.05;
 			GameObject::set_object_pos(x, y + vertical_speed);
-			for (int i = 0; i < background_elems_count; i++)
+			for (int i = 0; i < blocks_count; i++)
 			{
-				if (check_collision(background_elems[i]))
+				if (check_collision(blocks[i]))
 				{
-					if (vertical_speed > 0) isFly = false;
+					if (vertical_speed > 0) is_fly = false;
 										
-					if ((background_elems[i].get_kind() == '?') && (vertical_speed < 0))
+					if ((blocks[i].get_kind() == FULL_BOX) && (vertical_speed < 0))
 					{
-						background_elems[i].set_kind('-');
-						level.add_new_sprite(sprites, sprites_count, background_elems[i].get_x(), background_elems[i].get_y() - 3, 3, 2, '$');
+						blocks[i].set_kind(BOX);
+						level.add_new_sprite(sprites, sprites_count, blocks[i].get_x(), blocks[i].get_y() - 3, 3, 2, COIN);
 						sprites[sprites_count - 1].set_vertical_speed(sprites[sprites_count - 1].get_vertical_speed() - 0.7);
 					}
 					
 					y -= vertical_speed;
 					vertical_speed = 0;
 	
-					if (background_elems[i].get_kind() == '+') return true; 
-					// Внук имеет доступ к полю protected Деда только для this, для других объектов - нет, поэтому использовать геттер.
+					if (blocks[i].get_kind() == FINISH) return true; 
 				}
 			}
 			return false;
@@ -389,9 +338,9 @@ class Player: public MovingObject
 			for (int i = 0; i < sprites_count; i++)
 				if (check_collision(sprites[i]))
 				{
-					if (sprites[i].get_kind() == 'o')
+					if (sprites[i].get_kind() == ENEMY)
 					{
-						if (isFly == true
+						if (is_fly == true
 							&& vertical_speed > 0
 							&& y + height < sprites[i].get_y() + sprites[i].get_height() * 0.5)
 						{
@@ -404,7 +353,7 @@ class Player: public MovingObject
 							return true;
 					}
 					
-					if (sprites[i].get_kind() == '$')
+					if (sprites[i].get_kind() == COIN)
 					{
 						score += 100;
 						level.remove_sprite(i, sprites, sprites_count);
@@ -419,7 +368,7 @@ class Player: public MovingObject
 class Game
 {
 	private:
-		GameObject* background_elems;
+		GameObject* blocks;
 		Sprite* sprites;
 		Player player;
 		Level level;
@@ -427,7 +376,7 @@ class Game
 		Map map;
 		
 		int sprites_count;
-		int background_elems_count;	
+		int blocks_count;	
 
 		int score;
 		
@@ -435,27 +384,27 @@ class Game
 		{
 			player.jump();
 			
-			if (GetKeyState('A') < 0) map.scroll_map(1, player, background_elems, background_elems_count, sprites, sprites_count);
+			if (GetKeyState('A') < 0) map.scroll_map(1, player, blocks, blocks_count, sprites, sprites_count);
 			
-			if (GetKeyState('D') < 0) map.scroll_map(-1, player, background_elems, background_elems_count, sprites, sprites_count);
+			if (GetKeyState('D') < 0) map.scroll_map(-1, player, blocks, blocks_count, sprites, sprites_count);
 			
-			if (player.vertical_move_object(level, background_elems, background_elems_count, sprites, sprites_count)) level.next_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+			if (player.vertical_move_object(level, blocks, blocks_count, sprites, sprites_count)) level.next_level(player, blocks, blocks_count, sprites, sprites_count, score);
 		}
 		
 		void sprites_position()
 		{
 			for (int i = 0; i < sprites_count; i++)
 			{
-				sprites[i].horizontal_move_object(sprites[i], background_elems, background_elems_count);
-				sprites[i].vertical_move_object(background_elems, background_elems_count);
+				sprites[i].horizontal_move_object(sprites[i], blocks, blocks_count);
+				sprites[i].vertical_move_object(blocks, blocks_count);
 			}
 		}
 		
 		void death_check()
 		{
-		if (player.get_y() > map.get_MAP_HEIGHT()) level.restart_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+		if (player.get_y() > map.get_MAP_HEIGHT()) level.restart_level(player, blocks, blocks_count, sprites, sprites_count, score);
 		
-		if (player.player_collision_model(level, sprites, sprites_count, score)) level.restart_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+		if (player.player_collision_model(level, sprites, sprites_count, score)) level.restart_level(player, blocks, blocks_count, sprites, sprites_count, score);
 		}
 		
 		void new_frame()
@@ -469,8 +418,8 @@ class Game
 		{	
 			map.clear_map();
 			
-			for (int i = 0; i < background_elems_count; i++)
-				map.add_object_on_map(background_elems[i]);
+			for (int i = 0; i < blocks_count; i++)
+				map.add_object_on_map(blocks[i]);
 			for (int i = 0; i < sprites_count; i++)
 				map.add_object_on_map(sprites[i]);
 			
@@ -481,18 +430,18 @@ class Game
 	public:
 		Game()
 		{
-			background_elems = nullptr;
+			blocks = nullptr;
 			sprites = nullptr;
-			background_elems_count = 0;
+			blocks_count = 0;
 			sprites_count = 0;
 			score = 0;
 			
-			level.create_level(player, background_elems, background_elems_count, sprites, sprites_count, score);
+			level.create_level(player, blocks, blocks_count, sprites, sprites_count, score);
 		}
 		~Game()
 		{
-			delete[] background_elems;
-			background_elems = nullptr;
+			delete[] blocks;
+			blocks = nullptr;
 			delete[] sprites;
 			sprites = nullptr;
 		}
@@ -514,10 +463,123 @@ class Game
 		}
 };
 
-
 int main()
 {
 	Game game;
 	game.run();
 	return 0;
+}
+
+
+// ----------------------------------------------------------------------------
+// GameObject
+// ----------------------------------------------------------------------------
+GameObject::GameObject()
+{
+	x = 0;
+	y = 0;
+	height = 0;
+	width = 0;
+	kind = ' ';
+}
+
+bool GameObject::check_collision(const GameObject& obj)
+{
+	return (x +  width) > obj.x
+	&& x < (obj.x + obj.width)
+	&& (y +  height) > obj.y 
+	&& y < (obj.y + obj.height);
+}
+
+float GameObject::get_height() const { return height; }
+char GameObject::get_kind() const { return kind; }
+float GameObject::get_width() const { return width; }
+float GameObject::get_x() const { return x; }
+float GameObject::get_y() const { return y; }
+
+void GameObject::init_object(
+	float init_x, float init_y, 
+	float init_width, float init_height, 
+	char init_kind
+) {
+	set_object_pos(init_x, init_y);
+	width = init_width;
+	height = init_height;
+	kind = init_kind;
+}
+	
+void GameObject::set_kind(char new_kind) { kind = new_kind; }
+void GameObject::set_object_pos(float obj_pos_x, float obj_pos_y)
+{
+	x = obj_pos_x;
+	y = obj_pos_y;
+}
+void GameObject::set_x(float new_x) { x = new_x; }	
+
+// ----------------------------------------------------------------------------
+// MovingObject
+// ----------------------------------------------------------------------------
+float MovingObject::get_vertical_speed() const { return vertical_speed; }
+float MovingObject::get_horizontal_speed() const { return horizontal_speed; }
+bool MovingObject::get_is_fly() const { return is_fly; }
+
+void MovingObject::init_object(
+	float init_x, float init_y, 
+	float init_width, float init_height, 
+	char init_kind
+) {
+	GameObject::init_object(
+		init_x, init_y, 
+		init_width, init_height, 
+		init_kind
+	);
+	vertical_speed = 0;
+	horizontal_speed = 0.2;
+}
+
+void MovingObject::set_vertical_speed(float new_vertical_speed)
+	{ vertical_speed = new_vertical_speed; }
+
+// ----------------------------------------------------------------------------
+// Sprite
+// ----------------------------------------------------------------------------
+void Sprite::horizontal_move_object(Sprite& obj, GameObject*& blocks, int blocks_count)
+{
+	obj.set_x(obj.get_x() + horizontal_speed);
+	
+	for (int i = 0; i < blocks_count; i++)
+		if (check_collision(blocks[i]))
+		{
+			obj.set_x(obj.get_x() - horizontal_speed);
+			horizontal_speed = -horizontal_speed;
+			return;
+		}
+	
+	if (obj.get_kind() == ENEMY)
+	{
+		Sprite tmp = obj;
+		tmp.vertical_move_object(blocks, blocks_count);
+		if (tmp.get_is_fly())
+		{
+			obj.set_x(obj.get_x() - horizontal_speed);
+			horizontal_speed = -horizontal_speed;	
+		}
+	}
+}
+bool Sprite::vertical_move_object(GameObject*& blocks, int blocks_count) 
+{
+	is_fly = true;
+	vertical_speed += 0.05;
+	GameObject::set_object_pos(x, y + vertical_speed);
+	for (int i = 0; i < blocks_count; i++)
+	{
+		if (check_collision(blocks[i]))
+		{
+			if (vertical_speed > 0) is_fly = false;
+			y -= vertical_speed;
+			vertical_speed = 0;
+			is_fly = false;
+		}
+	}
+	return false;
 }
