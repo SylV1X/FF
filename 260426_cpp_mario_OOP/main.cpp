@@ -4,6 +4,10 @@
 #include <sstream>
 #include <windows.h>
 
+#include "GameObject.hpp"
+
+using namespace ssY;
+
 enum Section : char {
 	BOX = '-',
 	COIN = '$',
@@ -12,36 +16,6 @@ enum Section : char {
 	ENEMY = 'o',
 	MARIO = '@',
 	PLATFORM = '#'
-};
-
-class GameObject
-{
-	protected:
-		friend class Map;
-		float x, y;
-		float height, width;
-		char kind;
-
-	public:		
-		GameObject();
-		
-		bool check_collision(const GameObject& obj);
-		
-		float get_height() const;
-		char get_kind() const;
-		float get_width() const;
-		float get_x() const;
-		float get_y() const;
-		
-		void init_object(
-			float init_x, float init_y, 
-			float init_width, float init_height, 
-			char init_kind
-		);
-		
-		void set_kind(char new_kind);
-		void set_object_pos(float obj_pos_x, float obj_pos_y);
-		void set_x(float new_x);
 };
 
 class MovingObject: public GameObject
@@ -241,7 +215,6 @@ int main()
 		map.show_map();
 		
 		Sleep(10);
-
 	} 
 	while (GetKeyState(VK_ESCAPE) >= 0);
 
@@ -252,51 +225,6 @@ int main()
 
 	return 0;
 }
-
-// --------------------------------------------------------------------------------------
-// GameObject
-// --------------------------------------------------------------------------------------
-GameObject::GameObject()
-{
-	x = 0;
-	y = 0;
-	height = 0;
-	width = 0;
-	kind = ' ';
-}
-
-bool GameObject::check_collision(const GameObject& obj)
-{
-	return (x +  width) > obj.x
-	&& x < (obj.x + obj.width)
-	&& (y +  height) > obj.y 
-	&& y < (obj.y + obj.height);
-}
-
-float GameObject::get_height() const { return height; }
-char GameObject::get_kind() const { return kind; }
-float GameObject::get_width() const { return width; }
-float GameObject::get_x() const { return x; }
-float GameObject::get_y() const { return y; }
-
-void GameObject::init_object(
-	float init_x, float init_y, 
-	float init_width, float init_height, 
-	char init_kind
-) {
-	set_object_pos(init_x, init_y);
-	width = init_width;
-	height = init_height;
-	kind = init_kind;
-}
-	
-void GameObject::set_kind(char new_kind) { kind = new_kind; }
-void GameObject::set_object_pos(float obj_pos_x, float obj_pos_y)
-{
-	x = obj_pos_x;
-	y = obj_pos_y;
-}
-void GameObject::set_x(float new_x) { x = new_x; }	
 
 // --------------------------------------------------------------------------------------
 // MovingObject
@@ -374,15 +302,15 @@ bool Sprite::vertical_move_object(GameObject*& blocks, int blocks_count)
 // --------------------------------------------------------------------------------------
 void Map::add_object_on_map(const GameObject& obj)
 {
-	int int_x = (int)round(obj.x);
-	int int_y = (int)round(obj.y);
-	int int_width = (int)round(obj.width);
-	int int_height = (int)round(obj.height);
+	int int_x = (int)round(obj.get_x());
+	int int_y = (int)round(obj.get_y());
+	int int_width = (int)round(obj.get_width());
+	int int_height = (int)round(obj.get_height());
 	
 	for (int i = int_x; i < (int_x + int_width); i++)
 		for (int j = int_y; j < (int_y + int_height); j++)
 			if (object_within_map(i, j))
-				map[j][i] = obj.kind;
+				map[j][i] = obj.get_kind();
 }
 
 void Map::clear_map()
@@ -407,18 +335,18 @@ void Map::scroll_map(
 	GameObject& player, GameObject*& blocks, 
 	int blocks_count, Sprite*& sprites, int& sprites_count
 ) {
-	player.set_x(player.x - dx);
+	player.set_x(player.get_x() - dx);
 	for (int i = 0; i < blocks_count; i++)
 		if (player.check_collision(blocks[i]))
 		{
-			player.set_x(player.x + dx);
+			player.set_x(player.get_x() + dx);
 			return;
 		}
-	player.set_x(player.x + dx);
+	player.set_x(player.get_x() + dx);
 	for (int i = 0; i < blocks_count; i++)
-		blocks[i].set_x(blocks[i].x + dx);
+		blocks[i].set_x(blocks[i].get_x() + dx);
 	for (int i = 0; i < sprites_count; i++)
-		sprites[i].set_x(sprites[i].x + dx);
+		sprites[i].set_x(sprites[i].get_x() + dx);
 }
 
 void Map::show_map()
