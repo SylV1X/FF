@@ -169,108 +169,66 @@ class Player: public MovingObject
 		);
 };
 
-class Game
-{
-	private:
-		GameObject* blocks;
-		Sprite* sprites;
-		Player player;
-		Level level;
-		
-		Map map;
-		
-		int sprites_count;
-		int blocks_count;	
-
-		int score;
-		
-		void player_position()
-		{
-			player.jump();
-			
-			if (GetKeyState('A') < 0) map.scroll_map(1, player, blocks, blocks_count, sprites, sprites_count);
-			
-			if (GetKeyState('D') < 0) map.scroll_map(-1, player, blocks, blocks_count, sprites, sprites_count);
-			
-			if (player.vertical_move_object(level, blocks, blocks_count, sprites, sprites_count)) level.next_level(player, blocks, blocks_count, sprites, sprites_count, score);
-		}
-		
-		void sprites_position()
-		{
-			for (int i = 0; i < sprites_count; i++)
-			{
-				sprites[i].horizontal_move_object(sprites[i], blocks, blocks_count);
-				sprites[i].vertical_move_object(blocks, blocks_count);
-			}
-		}
-		
-		void death_check()
-		{
-		if (player.get_y() > map.get_MAP_HEIGHT()) level.restart_level(player, blocks, blocks_count, sprites, sprites_count, score);
-		
-		if (player.player_collision_model(level, sprites, sprites_count, score)) level.restart_level(player, blocks, blocks_count, sprites, sprites_count, score);
-		}
-		
-		void new_frame()
-		{
-			player_position();
-			sprites_position();
-			death_check();
-		}
-		
-		void rendering()
-		{	
-			map.clear_map();
-			
-			for (int i = 0; i < blocks_count; i++)
-				map.add_object_on_map(blocks[i]);
-			for (int i = 0; i < sprites_count; i++)
-				map.add_object_on_map(sprites[i]);
-			
-			map.add_object_on_map(player);
-			map.show_score(score);
-			map.show_map();
-		}
-	public:
-		Game()
-		{
-			blocks = nullptr;
-			sprites = nullptr;
-			blocks_count = 0;
-			sprites_count = 0;
-			score = 0;
-			
-			level.create_level(player, blocks, blocks_count, sprites, sprites_count, score);
-		}
-		~Game()
-		{
-			delete[] blocks;
-			blocks = nullptr;
-			delete[] sprites;
-			sprites = nullptr;
-		}
-		
-		Game(const Game& x) = delete;
-		Game(Game&& x) = delete;
-		Game& operator = (const Game& x) = delete;
-		Game& operator = (Game&& x) = delete;
-		
-		void run()
-		{
-			do
-			{
-				new_frame();
-				rendering();
-				Sleep(10);
-			}
-			while (GetKeyState(VK_ESCAPE) >= 0);
-		}
-};
-
 int main()
 {
-	Game game;
-	game.run();
+	GameObject* blocks = nullptr;
+	Sprite* sprites = nullptr;
+	Player player;
+	Level level;
+	
+	Map map;
+	
+	int sprites_count = 0;
+	int blocks_count = 0;	
+
+	int score = 0;
+	
+	level.create_level(player, blocks, blocks_count, sprites, sprites_count, score);
+
+	do
+	{
+		player.jump();
+		
+		if (GetKeyState('A') < 0) map.scroll_map(1, player, blocks, blocks_count, sprites, sprites_count);
+		
+		if (GetKeyState('D') < 0) map.scroll_map(-1, player, blocks, blocks_count, sprites, sprites_count);
+		
+		if (player.vertical_move_object(level, blocks, blocks_count, sprites, sprites_count)) 
+			level.next_level(player, blocks, blocks_count, sprites, sprites_count, score);
+	
+		for (int i = 0; i < sprites_count; i++)
+		{
+			sprites[i].horizontal_move_object(sprites[i], blocks, blocks_count);
+			sprites[i].vertical_move_object(blocks, blocks_count);
+		}
+
+		if (player.get_y() > map.get_MAP_HEIGHT()) 
+			level.restart_level(player, blocks, blocks_count, sprites, sprites_count, score);
+		
+		if (player.player_collision_model(level, sprites, sprites_count, score)) 
+			level.restart_level(player, blocks, blocks_count, sprites, sprites_count, score);
+		
+		map.clear_map();
+		
+		for (int i = 0; i < blocks_count; i++)
+			map.add_object_on_map(blocks[i]);
+		for (int i = 0; i < sprites_count; i++)
+			map.add_object_on_map(sprites[i]);
+		
+		map.add_object_on_map(player);
+		map.show_score(score);
+		map.show_map();
+		
+		Sleep(10);
+
+	} 
+	while (GetKeyState(VK_ESCAPE) >= 0);
+
+	delete[] blocks;
+	blocks = nullptr;
+	delete[] sprites;
+	sprites = nullptr;
+
 	return 0;
 }
 
