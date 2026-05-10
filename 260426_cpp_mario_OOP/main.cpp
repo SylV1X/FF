@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <windows.h>
 
 #include "GameObject.hpp"
