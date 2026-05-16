@@ -11,8 +11,9 @@ void Level::add_new_block(
 	char kind
 ) {
 	GameObject* blocks_update = new GameObject[blocks_count + 1];
-	for (int i = 0; i < blocks_count; i++)
+	for (int i = 0; i < blocks_count; i++) {
 		blocks_update[i] = blocks[i];
+	}
 	delete[] blocks;
 	blocks = blocks_update;
 	blocks[blocks_count].init_object(x, y, height, width, kind);
@@ -26,8 +27,9 @@ void Level::add_new_sprite(
 	char kind
 ) {
 	Sprite* sprites_update = new Sprite[sprites_count + 1];
-	for (int i = 0; i < sprites_count; i++)
+	for (int i = 0; i < sprites_count; i++) {
 		sprites_update[i] = sprites[i];
+	}
 	delete[] sprites;
 	sprites = sprites_update;
 	sprites[sprites_count].init_object(x, y, height, width, kind);
@@ -128,8 +130,9 @@ void Level::next_level(
 	int& score
 ) {
 	current_level++;
-	if (current_level > max_level)
+	if (current_level > max_level) {
 		current_level = 1;
+	}
 	
 	system("color 2F");
 	Sleep(500);

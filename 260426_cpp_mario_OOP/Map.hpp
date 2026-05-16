@@ -13,17 +13,14 @@ namespace ssY {
 			
 		public:
 			void add_object_on_map(const GameObject& obj);
-			
-			void clear_map();
-			
-			float get_MAP_HEIGHT() const;
-			
-			bool object_within_map(int x, int y);
-			
+			void clear_map();		
+			float get_map_height() const;		
+			bool object_within_map(int x, int y);	
 			void scroll_map(
 				float dx, 
-				GameObject& player, GameObject*& blocks, 
-				int blocks_count, Sprite*& sprites, int& sprites_count
+				GameObject& player, 
+				GameObject*& blocks, int blocks_count, 
+				Sprite*& sprites, int& sprites_count
 			);
 			void show_map();
 			void show_score(int score);

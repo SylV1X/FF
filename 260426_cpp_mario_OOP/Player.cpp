@@ -6,8 +6,9 @@ using ssY::Player;
 
 void Player::jump()
 {
-	if (!is_fly && GetKeyState(VK_SPACE) < 0) 
+	if (!is_fly && GetKeyState(VK_SPACE) < 0) {
 		 vertical_speed = -1;
+	}
 }
 
 bool Player::player_collision_model(
@@ -15,7 +16,7 @@ bool Player::player_collision_model(
 	Sprite*& sprites, int& sprites_count, 
 	int& score
 ) {
-	for (int i = 0; i < sprites_count; i++)
+	for (int i = 0; i < sprites_count; i++) {
 		if (check_collision(sprites[i]))
 		{
 			if (sprites[i].get_kind() == ENEMY)
@@ -29,8 +30,7 @@ bool Player::player_collision_model(
 					i--;
 					continue;
 				}
-				else
-					return true;
+				else return true;
 			}
 			
 			if (sprites[i].get_kind() == COIN)
@@ -41,6 +41,7 @@ bool Player::player_collision_model(
 				continue;
 			}
 		}
+	}
 	return false;
 }		
 

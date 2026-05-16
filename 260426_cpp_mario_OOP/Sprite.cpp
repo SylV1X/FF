@@ -8,13 +8,15 @@ void Sprite::horizontal_move_object(
 ) {
 	obj.set_x(obj.get_x() + horizontal_speed);
 	
-	for (int i = 0; i < blocks_count; i++)
+	for (int i = 0; i < blocks_count; i++) 
+	{
 		if (check_collision(blocks[i]))
 		{
 			obj.set_x(obj.get_x() - horizontal_speed);
 			horizontal_speed = -horizontal_speed;
 			return;
 		}
+	}
 	
 	if (obj.get_kind() == 'o')
 	{
