@@ -28,7 +28,7 @@ LongNumber::LongNumber(const char* const str) {
 		length = now_length;
 	}
 	
-	numbers = new int[length];
+	numbers = new int[length]{0};
 	for (int i = 0; i < length; i++)
 		numbers[i] = str[now_length - 1 - i] - '0';
 }
@@ -36,7 +36,7 @@ LongNumber::LongNumber(const char* const str) {
 LongNumber::LongNumber(const LongNumber& x) {
 	sign = x.sign;
 	length = x.length;
-	numbers = new int[length];
+	numbers = new int[length]{0};
 	for (int i = 0; i < length; i++)
 		numbers[i] = x.numbers[i];
 }
@@ -70,7 +70,7 @@ LongNumber& LongNumber::operator = (const char* const str) {
 		length = now_length;
 	}
 	delete [] numbers;
-	numbers = new int[length];
+	numbers = new int[length]{0};
 	for (int i = 0; i < length; i++) 
 		numbers[i] = str[now_length - 1 - i] - '0';
 	
@@ -84,7 +84,7 @@ LongNumber& LongNumber::operator = (const LongNumber& x) {
 	sign = x.sign;
 	length = x.length;
 	delete [] numbers;
-	numbers = new int[length];
+	numbers = new int[length]{0};
 	for (int i = 0; i < length; i++)
 		numbers[i] = x.numbers[i];
 	
@@ -304,9 +304,10 @@ LongNumber LongNumber::operator / (const LongNumber& x) const {
 	
 	while (res.length > 1 and res.numbers[res.length - 1] == 0)
 		res.length--;
-	if (res.sign == -1 and dividend > 0) 
+	
+	if (res.sign == -1 and (dividend.numbers[0] != 0))
 	{
-        LongNumber one(1, 1);
+		LongNumber one("1");
         res = res - one;
     }
 	
@@ -314,43 +315,19 @@ LongNumber LongNumber::operator / (const LongNumber& x) const {
 }
 
 LongNumber LongNumber::operator % (const LongNumber& x) const {
-    LongNumber res;
-    LongNumber abs_x = x;
-    LongNumber abs_this = *this;
-    
-    abs_x.sign = 1;
-    abs_this.sign = 1;
-    
-    LongNumber abs_res = abs_this - (abs_this / abs_x) * abs_x;
-    
-    if (is_negative())
-	{
-        if (x.is_negative()) 
-		{
-            res = abs_res;
-            if (abs_res != 0)
-                res.sign = -1;
-        } 
-		else {
-            res = x - abs_res;
-            if (res == x) {
-                res = LongNumber("0");
-            }
-        }
-    } 
-	else 
-	{
-        if (x.is_negative()) 
-		{
-            res = abs_res - x;
-            if (res != 0)
-                res.sign = -1;
-        } 
-		else
-            res = abs_res;
-    }
-    
-    return res;
+	LongNumber res;
+	LongNumber abs_x = x;
+	LongNumber dividend = *this;
+	
+	abs_x.sign = 1;
+	dividend.sign = 1;
+	
+	res = dividend - (dividend / abs_x) * abs_x;
+	
+	if (x.is_negative())
+		res.sign = -1;
+	
+	return res;
 }
 
 bool LongNumber::is_negative() const noexcept {

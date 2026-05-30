@@ -92,6 +92,8 @@ TEST_F(FArithmetic, division_full_sign_example) {
 	EXPECT_EQ(n_16, p_100 / n_6) << "100 / -6 = -16";
 	EXPECT_EQ(n_17, n_100 / p_6) << "-100 / 6 = -17";
 	EXPECT_EQ(p_17, n_100 / n_6) << "-100 / -6 = 17";
+	LongNumber n_97("-97");
+	EXPECT_EQ(n_16, n_97 / p_6) << "-97 / 6 = -16";
 }
 
 TEST_F(FArithmetic, remainder) {

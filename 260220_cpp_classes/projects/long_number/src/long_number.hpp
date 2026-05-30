@@ -41,3 +41,6 @@ namespace ssY {
 			int get_length(const char* const str) const noexcept;
 	};
 }
+
+
+

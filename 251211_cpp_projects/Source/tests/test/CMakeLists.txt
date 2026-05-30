@@ -9,4 +9,4 @@ target_link_libraries(test_bubble
 	gmock_main 
 )
 
-add_test(test_bubble test_bubble)
+add_test(test_bubble2 test_bubble)
