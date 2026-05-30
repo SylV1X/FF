@@ -1,0 +1,164 @@
+Signs:
+:: - Move in directories
+-- - Comment
+-> - Linked
+!! - Alarm
+== - Project structure(points 8, 13, 14)
+
+
+1. Init
+
+2. Create Map
+OS:: Cursor
+UI:: Map
+
+--No link--
+
+
+3. Add Object
+Model:: GameObject(UiObject, Rect), Position(Coord),
+Items:: Block(Ship)
+
+-- Rect -> UiObject -> Ship --
+
+
+4. Add Level
+Levels:: Level(GameLevel, FirstLevel)
+
+-- GameLevel -> FirstLevel --
+
+
+5. Allow Map Move
+Controller:: Game
+Model:: GameObject, Postion, MapUpdate(MapMovable)
+
+-- MapMovable -> Ship --
+
+
+6. Split Logic n' UI
+Controller:: Game, Linker(UIFactory)
+Levels:: --REMOVE--
+Model:: GameObject(Rect, Ship), Position, MapUpdate(MapMovable, GameMap)
+UI:: Map(console_game_map), GameObject(console_ship, console_ui_obj), Level(console_ui_factory)
+
+-- GameMap -> console_game_map --
+-- Ship -> console_ship --
+-- console_ui_obj -> console_ship --
+-- UIFactory -> console_ui_factory --
+
+
+7. Add OS Controlls
+OS::API(Settings, Input)
+OS::Windows(Settings, Input)
+-- No link --
+
+
+8. Add Mario
+Model:: GameObject(Movable, Collisionable, Mario), Position, MapUpdate,
+UI:: Map, GameObject(console_mario), Level
+
+-- Rect -> Movable -> Mario -> console_mario --
+-- Collisionable -> Mario -> console_mario --
+-- console_ui_obj -> console_mario --
+
+=================================================================================================================
+Controller:: game, ui_factory
+
+Model:: coord, game_map, collisionable, rect, ship, movable, mario (speed, map_movable)
+
+OS::API&Windows:: os_control_settings, user_input
+
+UI::Console:: console_game_map, console_ui_factory, console_ui_obj, console_ship, console_mario
+
+MAIN
+=================================================================================================================
+
+
+9. Add Adapter
+UI:: Map, Level, GameObj, Adapter(console_ui_obj_rect_adapter)
+
+-- Rect -> console_ui_obj_rect_adapter -> console_mario --
+-- console_ui_obj -> console_ui_obj_rect_adapter -> console_mario --
+-- Rect -> console_ui_obj_rect_adapter -> console_ship --
+-- console_ui_obj -> console_ui_obj_rect_adapter -> console_ship --
+
+!!!diamond-shaped inheritance!!!
+Rect -> Mario -> console_mario
+Rect -> Ship -> console_ship
+Rect -> Adapter -> console_mario, console_ship
+!!!diamond-shaped inheritance!!!
+
+
+10. Add Level
+Controller::Levels:: Level(GameLevel, FirstLevel, SecondLevel)
+Model:: Position, GameObject, MapUpdate, Linker(UIFactory)
+
+-- GameLevel -> FirstLevel --
+-- GameLevel -> SecondLevel --
+
+
+11. Add EmptyBox n' Adapter
+Model:: Position, GameObject(Box), MapUpdate, Linker, Adapter(Rect-MapMove)
+UI:: Map, Level, GameObj(console_box), Adapter
+
+-- Rect -> Rect-MapMove -> Ship --
+-- MapMovable -> Rect-MapMove -> Ship --
+-- Rect -> Rect-MapMove -> Box -> console_box --
+-- MapMovable -> Rect-MapMove -> Box -> console_box --
+-- console_ui_obj_rect_adapter -> console_box
+
+
+12. Add Enemy
+Model:: Position, GameObject(Enemy), MapUpdate, Linker, Adapter
+UI:: Map, Level, GameObj(console_enemy), Adapter
+
+-- Movable -> Enemy -> console_enemy --
+-- Collisionable -> Enemy -> console_enemy --
+-- Adapter -> Enemy -> console_enemy --
+-- console_ui_obj_rect_adapter -> console_enemy --
+
+
+13. Add FullBox w' Money
+Model:: Position, GameObject(FullBox, Money), MapUpdate, Linker, Adapter
+UI:: Map, Level, GameObj(console_full_box, console_money), Adapter
+
+-- Box -> FullBox -> console_full_box --
+-- Collisionable -> FullBox -> console_full_box --
+-- Movable -> Money -> console_money --
+-- Collisionable -> Money -> console_money --
+-- Adapter -> Money -> console_money --
+-- console_ui_obj_rect_adapter -> console_full_box --
+-- console_ui_obj_rect_adapter -> console_money --
+
+=================================================================================================================
+Controller:: game, levels()
+Controller::Levels:: game_level, first_level, second_level
+
+Model:: coord, game_map, rect, map_movable, rect_map_movable_adapter,
+movable, collisionable, box, ship, mario, enemy, full_box, money (speed, ui_factory)
+
+OS::API&Windows:: os_control_settings, user_input
+
+UI::Console:: console_game_map, console_ui_factory, console_ui_obj, console_ui_obj_rect_adapter,
+console_box, console_ship, console_mario, console_enemy, console_full_box, console_money
+
+MAIN
+=================================================================================================================
+
+
+
+14 - Refactor structure - Final
+=================================================================================================================
+Controller:: game
+
+Levels:: game_level, first_level, second_level
+
+Model:: coord, game_map, map_movable, rect, rect_map_movable_adapter, movable, collisionable, speed, ui_factory
+
+Objects:: ship, box, mario, enemy, full_box, money
+
+OS::API&Windows:: os_control_settings, user_input
+
+UI::Console:: ui_objects(), console_game_map, console_ui_factory, console_ui_obj, console_ui_obj_rect_adapter
+UI::Console::UIObjects:: console_ship, console_box, console_mario, console_enemy, console_full_box, console_money
+=================================================================================================================
