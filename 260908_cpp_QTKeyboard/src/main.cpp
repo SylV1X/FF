@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
     biv::WelcomeWindow welcome_window;
     biv::KeyBoardWindow keyboard_window;
 	
-    QObject::connect(&welcome_window, &biv::WelcomeWindow::button_pressed,
+    QObject::connect(&welcome_window, &biv::WelcomeWindow::on_welcome_finished,
                      &keyboard_window, &biv::KeyBoardWindow::show_window);
 					 
 	welcome_window.show();

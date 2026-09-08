@@ -20,11 +20,11 @@ WelcomeWindow::WelcomeWindow(QWidget* parent) : QWidget(parent) {
 	main_layout->addWidget(welcome_text);
 	main_layout->addWidget(button);
 	
-	connect(button, &QPushButton::clicked, this, &WelcomeWindow::go_to_keyboard);
+	connect(button, &QPushButton::clicked, this, &WelcomeWindow::handle_go_pressed);
 }
 
-void WelcomeWindow::go_to_keyboard() {
+void WelcomeWindow::handle_go_pressed() {
 	this->hide(); 
 	
-	emit button_pressed();
+	emit on_welcome_finished();
 }

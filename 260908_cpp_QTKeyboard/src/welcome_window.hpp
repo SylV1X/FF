@@ -11,10 +11,10 @@ namespace biv {
 		Q_OBJECT
 		
 		signals:
-			void button_pressed();
+			void on_welcome_finished();
 			
 		public slots:
-			void go_to_keyboard();
+			void handle_go_pressed();
 		
 		private:
 			QPushButton* button;
