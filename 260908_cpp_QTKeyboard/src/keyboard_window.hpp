@@ -15,6 +15,9 @@ namespace biv {
 		private slots:
 			void out_key_clicked_by_mouse(const QString& text);
 		
+		public slots:
+			void show_window();
+		
 		private:
 			QLineEdit* display;
 			KeyBoard* keyboard;

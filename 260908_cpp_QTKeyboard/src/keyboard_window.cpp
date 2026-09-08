@@ -9,7 +9,8 @@ using biv::KeyBoardWindow;
 
 KeyBoardWindow::KeyBoardWindow(QWidget* parent) : QWidget(parent) {
 	const int keyboard_width = 1160;
-	resize(keyboard_width, 710);
+	const int keyboard_height = 710;
+	resize(keyboard_width, keyboard_height);
     setWindowTitle("Грустная Клавиатура");
 	
 	QPixmap pixmap("img/grustnii-smail.png");
@@ -47,4 +48,8 @@ void KeyBoardWindow::keyPressEvent(QKeyEvent* event) {
 
 void KeyBoardWindow::out_key_clicked_by_mouse(const QString& text) {
 	display->setText(display->text() + text);
+}
+
+void KeyBoardWindow::show_window() {
+	this->show();
 }
