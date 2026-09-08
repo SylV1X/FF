@@ -12,6 +12,12 @@
 
 namespace biv {
 	class KeyBoard : public QWidget {
+		Q_OBJECT
+		
+		signals:
+			void button_clicked(const QString& text);
+			
+			
 		private:
 			const int button_width;
 			std::unordered_map<int, KeyBoardButton*> buttons;

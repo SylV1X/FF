@@ -28,6 +28,8 @@ KeyBoardWindow::KeyBoardWindow(QWidget* parent) : QWidget(parent) {
 	display->setText("Помоги мне заработать лучше...");
 
 	keyboard = new KeyBoard(keyboard_width);
+	
+	connect(keyboard, &KeyBoard::button_clicked, this, &KeyBoardWindow::out_key_clicked_by_mouse);
 
     QVBoxLayout* main_layout = new QVBoxLayout(this);
 	main_layout->addLayout(smail_layout);
@@ -41,4 +43,8 @@ void KeyBoardWindow::keyPressEvent(QKeyEvent* event) {
 		display->setText(display->text() + keyboard->get_key_text(key));
 		keyboard->animate_button(key);
 	}
+}
+
+void KeyBoardWindow::out_key_clicked_by_mouse(const QString& text) {
+	display->setText(display->text() + text);
 }

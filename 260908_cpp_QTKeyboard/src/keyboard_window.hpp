@@ -10,6 +10,11 @@
 
 namespace biv {
 	class KeyBoardWindow : public QWidget {
+		Q_OBJECT
+		
+		private slots:
+			void out_key_clicked_by_mouse(const QString& text);
+		
 		private:
 			QLineEdit* display;
 			KeyBoard* keyboard;

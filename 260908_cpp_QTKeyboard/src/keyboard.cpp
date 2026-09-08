@@ -81,5 +81,7 @@ void KeyBoard::create_buttons(
 		layout->addWidget(btn, line, i * 2 + start_position, 2, 2);
 		
 		buttons[data[i].code] = btn;
+		
+		connect(btn, &KeyBoardButton::button_clicked_by_mouse, this, &KeyBoard::button_clicked);
 	}
 }
