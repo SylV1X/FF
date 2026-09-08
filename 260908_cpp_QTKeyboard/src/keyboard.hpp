@@ -14,10 +14,6 @@ namespace biv {
 	class KeyBoard : public QWidget {
 		Q_OBJECT
 		
-		signals:
-			void button_clicked(const QString& text);
-			
-			
 		private:
 			const int button_width;
 			std::unordered_map<int, KeyBoardButton*> buttons;
@@ -30,6 +26,7 @@ namespace biv {
 			void animate_button(const int code);
 			QString get_key_text(const int code) const;
 			bool is_key_allowed(const int code) const noexcept;
+			bool is_special_key(const int code) const noexcept;
 			
 		private:
 			void create_buttons(

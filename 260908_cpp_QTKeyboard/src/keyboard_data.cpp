@@ -30,13 +30,25 @@ std::vector<KeyData> KeyBoardData::get_line4() const {
 	return {KEYS.begin() + 37, KEYS.begin() + 47};
 }
 
+bool KeyBoardData::is_special_key(const int code) const noexcept {
+    static const int special_keys[] = {8, 13, 32};
+    for (const int value : special_keys) {
+        if (code == value) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool KeyBoardData::is_key_allowed(const int code) const noexcept {
-	if (code >= 48 && code <= 57) {
+	if(is_special_key(code)){
 		return true;
 	}
 	
 	if (code < 65) {
-		return false;
+		if (code >= 48 && code <= 57) {
+			return true;
+		}
 	}
 	
 	if (code > 90) {

@@ -9,10 +9,4 @@ KeyBoardButton::KeyBoardButton(const QString& text, QWidget* parent)
 	setFont(QFont("Roboto", 20));
 	setText(text);
 	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-	
-	connect(this, &QPushButton::clicked, this, &KeyBoardButton::mouse_click);
-}
-
-void KeyBoardButton::mouse_click() {
-	emit button_clicked_by_mouse(text());
 }

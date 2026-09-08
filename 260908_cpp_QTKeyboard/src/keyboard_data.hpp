@@ -16,5 +16,6 @@ namespace biv {
 			std::vector<KeyData> get_line4() const;
 			
 			bool is_key_allowed(const int code) const noexcept;
+			bool is_special_key(const int code) const noexcept;
 	};
 }

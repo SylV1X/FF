@@ -17,6 +17,7 @@ KeyBoard::KeyBoard(const int width, QWidget* parent)
 	KeyBoardButton* backspace_btn = new KeyBoardButton("Удалить");
 	backspace_btn->setMinimumSize(2 * button_width, button_width);
 	keys_layout->addWidget(backspace_btn, 0, 26, 2, 3);
+	buttons[8] = backspace_btn;
 
 	// 2-я линия
 	KeyBoardButton* tab_btn = new KeyBoardButton("Tab");
@@ -35,6 +36,7 @@ KeyBoard::KeyBoard(const int width, QWidget* parent)
 	KeyBoardButton* enter_btn = new KeyBoardButton("Enter");
 	enter_btn->setMinimumSize(2 * button_width, button_width);
 	keys_layout->addWidget(enter_btn, 4, 26, 2, 3);
+	buttons[13] = enter_btn;
 	
 	// 4-я линия
 	KeyBoardButton* left_shift_btn = new KeyBoardButton("Shift");
@@ -51,6 +53,7 @@ KeyBoard::KeyBoard(const int width, QWidget* parent)
 	KeyBoardButton* space = new KeyBoardButton();
 	space->setMinimumSize(8 * button_width, button_width);
 	keys_layout->addWidget(space, 8, 7, 2, 16);
+	buttons[32] = space;
 }
 
 void KeyBoard::animate_button(const int code) {
@@ -63,6 +66,10 @@ QString KeyBoard::get_key_text(const int code) const {
 
 bool KeyBoard::is_key_allowed(const int code) const noexcept {
 	return keyboard_data->is_key_allowed(code);
+}
+
+bool KeyBoard::is_special_key(const int code) const noexcept {
+    return keyboard_data->is_special_key(code);
 }
 
 // ----------------------------------------------------------------------------
@@ -81,7 +88,5 @@ void KeyBoard::create_buttons(
 		layout->addWidget(btn, line, i * 2 + start_position, 2, 2);
 		
 		buttons[data[i].code] = btn;
-		
-		connect(btn, &KeyBoardButton::button_clicked_by_mouse, this, &KeyBoard::button_clicked);
 	}
 }

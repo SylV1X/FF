@@ -27,10 +27,10 @@ KeyBoardWindow::KeyBoardWindow(QWidget* parent) : QWidget(parent) {
 	display->setFont(QFont("Roboto", 40));
     display->setReadOnly(true);
 	display->setText("Помоги мне заработать лучше...");
+	setFocusPolicy(Qt::StrongFocus);
+    setFocus();
 
 	keyboard = new KeyBoard(keyboard_width);
-	
-	connect(keyboard, &KeyBoard::button_clicked, this, &KeyBoardWindow::out_key_clicked_by_mouse);
 
     QVBoxLayout* main_layout = new QVBoxLayout(this);
 	main_layout->addLayout(smail_layout);
@@ -39,17 +39,39 @@ KeyBoardWindow::KeyBoardWindow(QWidget* parent) : QWidget(parent) {
 }
 
 void KeyBoardWindow::keyPressEvent(QKeyEvent* event) {
-	const int key = event->nativeVirtualKey();
-	if (keyboard->is_key_allowed(key)) {
-		display->setText(display->text() + keyboard->get_key_text(key));
-		keyboard->animate_button(key);
-	}
-}
-
-void KeyBoardWindow::out_key_clicked_by_mouse(const QString& text) {
-	display->setText(display->text() + text);
+    const int key = event->nativeVirtualKey();
+    
+    if (keyboard->is_key_allowed(key)) {
+        if (keyboard->is_special_key(key)) {
+            handle_special_key(key);
+        } else {
+            display->setText(display->text() + keyboard->get_key_text(key));
+        }
+        keyboard->animate_button(key);
+    }
 }
 
 void KeyBoardWindow::show_window() {
 	this->show();
+}
+
+void KeyBoardWindow::handle_special_key(const int code) {
+	switch(code) {
+		case 8: {
+			QString text = display->text();
+			if (!text.isEmpty()) {
+				text.chop(1);
+				display->setText(text);
+			}
+			break;
+		}
+		case 32: {
+			display->setText(display->text() + " ");
+			break;
+		}
+		case 13: {
+			display->clear();
+			break;
+		}
+	}
 }
